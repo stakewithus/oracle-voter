@@ -1,6 +1,24 @@
-def test_200_OK(http_mock, http_get_client, get_loop):
+import pytest
+from common.client import HttpError
+from aioresponses import aioresponses
+import asyncio
+
+
+def test_200_OK(http_get_client):
     url = "http://google.com"
-    resp_body = {"hello": "world"}
-    http_mock.get(url, status=200, payload=resp_body)
-    result = get_loop.run_until_complete(http_get_client(url))
-    assert result == resp_body
+    loop = asyncio.get_event_loop()
+    with aioresponses() as m:
+        resp_body = {"hello": "world"}
+        m.get(url, status=200, payload=resp_body)
+
+        result = loop.run_until_complete(http_get_client(url))
+        assert result == resp_body
+
+
+@pytest.mark.xfail(raises=HttpError)
+def test_404_NOTFOUND(http_get_client):
+    url = "http://google.com"
+    loop = asyncio.get_event_loop()
+    with aioresponses() as m:
+        m.get(url, status=404)
+        loop.run_until_complete(http_get_client(url))

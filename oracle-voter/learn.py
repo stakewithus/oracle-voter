@@ -11,12 +11,13 @@ async def main():
     last_trades_resp = await client_session.get(f"https://api.coinone.co.kr/trades/", params=last_trade_params)
     print(last_trades_resp.status)
     raw_text = await last_trades_resp.text()
+    print(raw_text)
     last_trades_res = json.loads(raw_text)
     if last_trades_res['errorCode'] != '0':
         # Some error is thrown by the exchange
         raise ValueError(f"Exchange threw error {last_trades_res['errorCode']}")
     # is_ask = the fill is long, the order is ask?
-    print(last_trades_res)
+    # print(last_trades_res)
     await client_session.close()
 
 
