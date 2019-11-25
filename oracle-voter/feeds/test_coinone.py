@@ -28,6 +28,7 @@ def test_get_trades_200(exchange_coinone_url, exchange_coinone):
         assert px_last == Decimal("297.0")
         assert qty_last == Decimal("773.1255")
         assert side_last == 0
+        exchange_coinone.graceful_exit()
 
 
 def test_get_trades_200_exchange_error_code(
@@ -48,3 +49,4 @@ def test_get_trades_200_exchange_error_code(
             exchange_coinone.get_trades(target_currency)
         )
         assert error is not None
+        exchange_coinone.graceful_exit()
