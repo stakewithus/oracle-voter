@@ -1,6 +1,7 @@
 from feeds.base import Base
 from common import client
 from decimal import Decimal
+from functools import partial
 
 
 class Coinone(Base):
@@ -33,3 +34,28 @@ class Coinone(Base):
         target_url = f"{self.api_url}/trades/"
         http_res = await client.http_get(target_url, params=get_params)
         return self.postpro_trades(http_res)
+
+    def format_order(self, open_order):
+        px = Decimal(open_order["price"])
+        qty = Decimal(open_order["qty"])
+        return px, qty
+
+    def postpro_orders(self, http_res):
+        result = dict()
+        error_code = http_res["errorCode"]
+        if error_code != "0":
+            return error_code, result
+        fetch_ts = http_res["timestamp"]
+        asks = [
+            self.format_order(open_order) for open_order in http_res["ask"]
+        ]
+        bids = [
+            self.format_order(open_order) for open_order in http_res["bid"]
+        ]
+        return None, {"fetch_ts": fetch_ts, "asks": asks, "bids": bids}
+
+    async def get_orderbook(self, currency):
+        get_params = {"currency": currency, "format": "json"}
+        target_url = f"{self.api_url}/orderbook/"
+        http_res = await client.http_get(target_url, params=get_params)
+        return self.postpro_orders(http_res)
