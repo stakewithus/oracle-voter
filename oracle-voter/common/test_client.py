@@ -15,10 +15,10 @@ def test_200_OK(http_get_client):
         assert result == resp_body
 
 
-@pytest.mark.xfail(raises=HttpError)
 def test_404_NOTFOUND(http_get_client):
     url = "http://google.com"
     loop = asyncio.get_event_loop()
     with aioresponses() as m:
         m.get(url, status=404)
-        loop.run_until_complete(http_get_client(url))
+        with pytest.raises(HttpError):
+            loop.run_until_complete(http_get_client(url))

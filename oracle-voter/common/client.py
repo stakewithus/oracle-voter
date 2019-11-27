@@ -19,9 +19,9 @@ async def http_get(url, params=dict()):
             raise HttpError(f"Url: {url}", status_code)
         raw_text = await http_resp.text()
         result = json.loads(raw_text)
-    except (HttpError,) as err:
-        if isinstance(err, HttpError):
-            raise err
-    finally:
         await session.close()
         return result
+    except (HttpError,) as err:
+        if isinstance(err, HttpError):
+            await session.close()
+            raise err
