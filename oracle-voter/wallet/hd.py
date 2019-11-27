@@ -30,7 +30,10 @@ class HDAccount:
             ec.SECP256K1(),
             default_backend(),
         )
-        new_data = data.replace("\\", "a")
+        print("Given Data")
+        print(data)
+        print(type(data))
+        new_data = data.replace(" ", "").replace("\\", "a")
         nn = new_data.replace("aa", "\\")
         payload = bytes(nn, "utf-8")
         print("to bytes")
@@ -59,7 +62,7 @@ class HDAccount:
         print("REAL DER")
         print(real_DER)
         # Verfy with Public Key
-        verify_payload = b'{"account_number": "45", "chain_id": "soju-0012", "fee": {"amount": [], "gas": "200000"}, "memo": "", "msgs": [{"type": "oracle\\/MsgExchangeRateVote", "value": {"denom": "ukrw", "exchange_rate": "8000.000000000000000000", "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm", "salt": "1234", "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu"}}], "sequence": "0"}'
+        verify_payload = b'{"account_number": "45", "chain_id": "soju-0012", "fee": {"amount": [], "gas": "200000"}, "memo": "", "msgs": [{"type": "oracle\\/MsgExchangeRateVote", "value": {"denom": "ukrw", "exchange_rate": "8000.000000000000000000", "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm", "salt": "1234", "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu"}}], "sequence": "0"}'.replace(b" ", b"")
         print(verify_payload)
 
         priv_key.public_key().verify(real_DER, verify_payload, ec.ECDSA(hashes.SHA256()))
