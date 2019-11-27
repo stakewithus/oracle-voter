@@ -2,14 +2,11 @@ from decimal import Decimal
 
 
 def test_build_vote_tx(tx_builder):
-    txb = tx_builder(
-        "soju-0012",
-        45
-    )
+    txb = tx_builder("soju-0012", 45, 0)
 
     txb.append_votemsg(
         exchange_rate=Decimal("8000.0"),
-        demon="ukrw",
+        denom="ukrw",
         feeder="terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
         validator="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
         salt="1234",
@@ -19,13 +16,14 @@ def test_build_vote_tx(tx_builder):
     expected = {
         "chain_id": "soju-0012",
         "account_number": "45",
+        "sequence": "0",
         "fee": {"amount": [], "gas": "200000"},
         "msgs": [{
-            "type": "oracle/MsgExchangeRateVote",
+            "type": r"oracle\/MsgExchangeRateVote",
             "value": {
                 "exchange_rate": "8000.000000000000000000",
                 "salt": "1234",
-                "demon": "ukrw",
+                "denom": "ukrw",
                 "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
                 "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
             },
@@ -36,14 +34,11 @@ def test_build_vote_tx(tx_builder):
 
 
 def test_build_and_sign_vote_tx(tx_builder, feeder_wallet):
-    txb = tx_builder(
-        "soju-0012",
-        45
-    )
+    txb = tx_builder("soju-0012", 45, 0)
 
     txb.append_votemsg(
         exchange_rate=Decimal("8000.0"),
-        demon="ukrw",
+        denom="ukrw",
         feeder="terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
         validator="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
         salt="1234",
@@ -56,13 +51,14 @@ def test_build_and_sign_vote_tx(tx_builder, feeder_wallet):
     expected = {
         "chain_id": "soju-0012",
         "account_number": "45",
+        "sequence": "0",
         "fee": {"amount": [], "gas": "200000"},
         "msgs": [{
-            "type": "oracle/MsgExchangeRateVote",
+            "type": r"oracle\/MsgExchangeRateVote",
             "value": {
                 "exchange_rate": "8000.000000000000000000",
                 "salt": "1234",
-                "demon": "ukrw",
+                "denom": "ukrw",
                 "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
                 "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
             },

@@ -1,4 +1,6 @@
 from decimal import Decimal
+from chain.utils import LexiSortDict
+import simplejson as json
 
 EIGHTEEN_PLACES = Decimal(10) ** -18
 
@@ -9,10 +11,12 @@ class Transaction:
         self,
         chain_id,
         account_number,
+        sequence,
         memo="",
     ):
         self.chain_id = chain_id
         self.account_number = str(account_number)
+        self.sequence = str(sequence)
         self.memo = memo
         self.fee = {
             "amount": list(),
@@ -24,7 +28,7 @@ class Transaction:
     def append_votemsg(
         self,
         exchange_rate="",
-        demon="",
+        denom="",
         feeder="",
         validator="",
         salt=None,
@@ -40,11 +44,11 @@ class Transaction:
             msg_salt = salt
 
         msg = {
-            "type": "oracle/MsgExchangeRateVote",
+            "type": r"oracle\/MsgExchangeRateVote",
             "value": {
                 "exchange_rate": rate,
                 "salt": msg_salt,
-                "demon": demon,
+                "denom": denom,
                 "feeder": feeder,
                 "validator": validator,
             },
@@ -55,6 +59,7 @@ class Transaction:
         tx = {
             "chain_id": self.chain_id,
             "account_number": self.account_number,
+            "sequence": self.sequence,
             "fee": self.fee,
             "msgs": self.msgs,
             "memo": self.memo,
@@ -64,7 +69,13 @@ class Transaction:
         return tx
 
     def sign(self, wallet):
-        pass
+        raw_payload = self.export()
+        sign_payload = json.dumps(LexiSortDict(raw_payload))
+        print("--sign-payload")
+        print(sign_payload)
+        print("--sign-payload")
+        signature = wallet.sign(sign_payload)
+        print(signature)
 
 
 class FullNode:
