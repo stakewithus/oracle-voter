@@ -1,6 +1,4 @@
 from decimal import Decimal
-from chain.utils import LexiSortDict
-import simplejson as json
 
 EIGHTEEN_PLACES = Decimal(10) ** -18
 
@@ -15,8 +13,8 @@ class Transaction:
         memo="",
     ):
         self.chain_id = chain_id
-        self.account_number = str(account_number)
-        self.sequence = str(sequence)
+        self.account_number = account_number
+        self.sequence = sequence
         self.memo = memo
         self.fee = {
             "amount": list(),
@@ -44,7 +42,7 @@ class Transaction:
             msg_salt = salt
 
         msg = {
-            "type": r"oracle\/MsgExchangeRateVote",
+            "type": "oracle/MsgExchangeRateVote",
             "value": {
                 "exchange_rate": rate,
                 "salt": msg_salt,
@@ -55,27 +53,43 @@ class Transaction:
         }
         self.msgs.append(msg)
 
-    def export(self, fmt="json"):
-        tx = {
+    def build_incomplete(self):
+        incomplete_tx = {
             "chain_id": self.chain_id,
-            "account_number": self.account_number,
-            "sequence": self.sequence,
+            "account_number": str(self.account_number),
+            "sequence": str(self.sequence),
             "fee": self.fee,
             "msgs": self.msgs,
             "memo": self.memo,
         }
         if self.signatures is not None:
-            tx["signatures"] = self.signatures
+            incomplete_tx["signatures"] = self.signatures
+        return incomplete_tx
+
+    def build(self):
+        tx = {
+            "type": "core/StdTx",
+            "value": {
+                "msg": self.msgs,
+                "fee": self.fee,
+                "memo": self.memo,
+                "signatures": list(),
+            }
+        }
         return tx
 
-    def sign(self, wallet):
-        raw_payload = self.export()
-        sign_payload = json.dumps(LexiSortDict(raw_payload))
-        print("--sign-payload")
-        print(sign_payload)
-        print("--sign-payload")
-        signature = wallet.sign(sign_payload)
-        print(signature)
+    def sign(
+        self,
+        wallet,  # Wallet Name in the cli
+    ):
+        payload = self.build()
+        result = wallet.offline_sign(
+            payload,
+            self.chain_id,
+            self.account_number,
+            self.sequence,
+        )
+        return result  
 
 
 class FullNode:
