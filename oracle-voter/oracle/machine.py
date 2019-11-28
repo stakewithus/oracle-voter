@@ -12,7 +12,6 @@ from wallet.cli import CLIWallet
 
 getcontext().prec = 40
 EIGHTEEN_PLACES = Decimal("10.0") ** -18
-print(getcontext().prec)
 
 
 class OracleState:
@@ -105,15 +104,22 @@ class Oracle:
         res = await self.lcd_node.get_oracle_rates()
         return res
 
+    async def update_wallet(self):
+        await self.feeder_wallet.update_state()
+        return None
+
     async def action_vote(self):
         print("----- Action -----")
         # Get Current Pre-Votes
         # TODO Get pre-votes for multiple currencies
-        [prevotes_raw, votes_raw, rates_raw] = await asyncio.gather(
+        [prevotes_raw, votes_raw, rates_raw, _feeder_wallet] = await asyncio.gather(
             self.get_prevotes(),
             self.get_votes(),
             self.get_rates(),
+            self.update_wallet(),
         )
+        print(prevotes_raw)
+        print(votes_raw)
         print(f"""Terra Luna Rate: {rates_raw["result"][0]}""")
         self.last_known_rate = Decimal(rates_raw["result"][0]["amount"])
         # If We Have PreVotes, and they belong
@@ -154,7 +160,8 @@ class Oracle:
         real_microprice = microprice.quantize(EIGHTEEN_PLACES, context=Context(prec=40))
         print(f"Our Microprice: {real_microprice}")
         # 1. Make the Random Salt
-        rate_salt = token_hex(8)
+        """ Salt Length is Between 1 - 4 """
+        rate_salt = token_hex(2)
         # 2. Make the Payload
         hash_payload = f"{rate_salt}:{str(real_microprice)}:{self.currency}:{self.validator_addr}"
         # 3. SHA256 Payload
@@ -195,16 +202,30 @@ class Oracle:
         print("----- PreviewSignedTx -----") 
         print(json.dumps(signed_tx, indent=2, sort_keys=True))
         print("----- Action -----")
+        """
+        Sometimes the account does not update...
+        """
+        # Bump the sequence
+        self.feeder_wallet.account_seq += 1
         # TODO Broadcast the TX
         broadcast_res = await self.full_node.broadcast_tx_async(json.dumps({
             "tx": signed_tx["value"],
-            "mode": "async",
+            "mode": "sync",
         }))
         print(broadcast_res)
         """ Some Errors 
 {'jsonrpc': '2.0', 'id': '', 'error': {'code': -32602, 'message': 'Invalid params', 'data': 'error converting http params to arguments: json: cannot unmarshal object into Go value of type types.Tx'}}
 
+        {'height': '0', 'txhash': '218C96406BBC8DA59AB2447D071C3A59BEEA1F770D9FF9A76E521B31CEB12BBC', 'code': 4, 'raw_log': '{"codespace":"sdk","code":4,"message":"signature verification failed; verify correct account sequence and chain-id"}'}
 
+        {'height': '0', 'txhash': 'C29D654165A98E2FC5299CFFF0C53B9CD235A3843C9130F587CFEE73C3BED62D', 'code': 10, 'raw_log': '{"codespace":"oracle","code":10,"message":"Salt legnth should be 1~4, but given 16"}'}
+        """
+
+        """ Success Messages
+
+{'height': '0', 'txhash': 'B4AE35F0AC201B0D1BCCE657DD20F2CF75EAD962668A51B7E308784C9BE7AE0B', 'raw_log': '[{"msg_index":0,"success":true,"log":"","events":[{"type":"message","attributes":[{"key":"action","value":"exchangerateprevote"}]}]}]', 'logs': [{'msg_index': 0, 'success': True, 'log': '', 'events': [{'type': 'message', 'attributes': [{'key': 'action', 'value': 'exchangerateprevote'}]}]}]}
+
+{'height': '0', 'txhash': '25C5797A853CDD9B7FF06715A32285E38FF77D886B424D6211939171E1F06229', 'raw_log': '[{"msg_index":0,"success":true,"log":"","events":[{"type":"message","attributes":[{"key":"action","value":"exchangerateprevote"}]}]},{"msg_index":1,"success":true,"log":"","events":[{"type":"message","attributes":[{"key":"action","value":"exchangeratevote"}]}]}]', 'logs': [{'msg_index': 0, 'success': True, 'log': '', 'events': [{'type': 'message', 'attributes': [{'key': 'action', 'value': 'exchangerateprevote'}]}]}, {'msg_index': 1, 'success': True, 'log': '', 'events': [{'type': 'message', 'attributes': [{'key': 'action', 'value': 'exchangeratevote'}]}]}]}
         """
         print("----- Action -----")
 

@@ -9,7 +9,8 @@ if __name__ == "__main__":
         # full_node_addr="http://18.197.124.43:56657",
         full_node_addr="http://18.197.124.43:1321",
         # Thanks Dokia
-        validator_addr="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
-        wallet_name="oracle",
+        # validator_addr="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+        validator_addr="terravaloper1emscfpz9jjtj8tj2nh70y25uywcakldsj76luz",
+        wallet_name="feeder",
         wallet_password="12345678",
     ))

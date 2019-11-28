@@ -15,10 +15,12 @@ async def http_get(url, params=dict()):
         #
         http_resp = await session.get(url, params=params)
         status_code = http_resp.status
-        if status_code != 200:
-            raise HttpError(f"Url: {url}", status_code)
+        # print(status_code)
         raw_text = await http_resp.text()
         result = json.loads(raw_text)
+        # print(result)
+        if status_code != 200:
+            raise HttpError(f"Url: {url}", status_code)
         await session.close()
         return result
     except (HttpError,) as err:
@@ -34,10 +36,12 @@ async def http_post(url, params=dict(), post_data=dict()):
         #
         http_resp = await session.post(url, params=params, data=post_data)
         status_code = http_resp.status
-        if status_code != 200:
-            raise HttpError(f"Url: {url}", status_code)
+        print(status_code)
         raw_text = await http_resp.text()
         result = json.loads(raw_text)
+        print(result)
+        if status_code != 200:
+            raise HttpError(f"Url: {url}", status_code)
         await session.close()
         return result
     except (HttpError,) as err:

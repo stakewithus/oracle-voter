@@ -45,16 +45,12 @@ class Transaction:
 
     def append_votemsg(
         self,
-        exchange_rate="",
+        exchange_rate="-1.000000000000000000",
         denom="",
         feeder="",
         validator="",
         salt=None,
     ):
-        # Currency Rate is 18 Decimals
-        rate = "-1.000000000000000000"
-        if isinstance(exchange_rate, Decimal):
-            rate = str(exchange_rate.quantize(EIGHTEEN_PLACES))
 
         msg_salt = None
 
@@ -64,7 +60,7 @@ class Transaction:
         msg = {
             "type": "oracle/MsgExchangeRateVote",
             "value": {
-                "exchange_rate": rate,
+                "exchange_rate": str(exchange_rate),
                 "salt": msg_salt,
                 "denom": denom,
                 "feeder": feeder,
