@@ -1,18 +1,41 @@
 import subprocess
+import os
 import simplejson as json
 
 
 class CLIWallet:
+    account_addr = None
+    account_num = 0
+    account_seq = 0
 
     def __init__(
         self,
         name,
         password,
         home=None,
+        lcd_node={},
     ):
         self.name = name
         self.password = password
         self.home = home
+        self.lcd_node = lcd_node
+        # Get the account address
+        self.get_addr()
+
+    async def update_state(self):
+        account_raw = await self.lcd_node.get_account(self.account_addr)
+        self.account_num = account_raw["result"]["value"]["account_number"]
+        self.account_seq = account_raw["result"]["value"]["sequence"]
+
+    def get_addr(self):
+        result = subprocess.check_output((
+            "terracli",
+            "keys",
+            "show",
+            f"{self.name}",
+            "-a",
+        ))
+        self.account_addr = str(result, "utf-8").strip()
 
     def offline_sign(
         self,
@@ -52,6 +75,7 @@ class CLIWallet:
         Throws subprocess.CalledProcessError
         ERROR: invalid account password
         """
-        print(str(result, "utf-8"))
         signed_tx = json.loads(str(result, "utf-8"))
+        # Remove Signing File
+        os.remove("cli-to-sign.json")
         return signed_tx
