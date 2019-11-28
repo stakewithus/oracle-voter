@@ -1,4 +1,5 @@
 from decimal import Decimal
+from common import client
 
 EIGHTEEN_PLACES = Decimal(10) ** -18
 
@@ -89,7 +90,7 @@ class Transaction:
             self.account_number,
             self.sequence,
         )
-        return result  
+        return result
 
 
 class FullNode:
@@ -107,4 +108,30 @@ class LCDNode:
         self,
         addr="http://127.0.0.1:1317",
     ):
-        pass
+        self.addr = addr
+
+    async def get_latest_block(self):
+        target_url = f"{self.addr}/blocks/latest"
+        params = dict()
+        http_res = await client.http_get(target_url, params=params)
+        return http_res
+
+    async def get_oracle_prevotes_validator(
+        self,
+        denom="",
+        validator_addr="",
+    ):
+        target_url = f"{self.addr}/oracle/denoms/{denom}/prevotes/{validator_addr}"
+        params = dict()
+        http_res = await client.http_get(target_url, params=params)
+        return http_res
+
+    async def get_oracle_votes_validator(
+        self,
+        denom="",
+        validator_addr="",
+    ):
+        target_url = f"{self.addr}/oracle/denoms/{denom}/votes/{validator_addr}"
+        params = dict()
+        http_res = await client.http_get(target_url, params=params)
+        return http_res
