@@ -146,11 +146,6 @@ class Oracle:
             print(f"""[Vote] VotePeriod: {vote_vp} Denom: {eval_vote["denom"]} Px: {eval_vote["exchange_rate"]}""")
         # Make Transaction For This Vote Period
         # TODO Load Chain ID from the LCD
-        txb = Transaction(
-            self.chain_id, 
-            self.feeder_wallet.account_num,
-            self.feeder_wallet.account_seq,
-        )
         # Do PreVote for This Period
         # Get MicroPrice
         # TODO Remove Hardcode
@@ -159,6 +154,61 @@ class Oracle:
         microprice = pricing.calc_microprice(orderbook)
         real_microprice = microprice.quantize(EIGHTEEN_PLACES, context=Context(prec=40))
         print(f"Our Microprice: {real_microprice}")
+        # Now Sign and Broadcast Votes
+        txb = Transaction(
+            self.chain_id, 
+            self.feeder_wallet.account_num,
+            self.feeder_wallet.account_seq,
+        )
+        
+        # For Votes in VoteQueue, Try to Find the Hash In Prevotes
+        broadcast_votes = len(self.vote_queue) > 0
+    
+        if broadcast_votes is True:
+            # Pause abit
+            await asyncio.sleep(0.500)
+            #
+            while len(self.vote_queue) > 0:
+                prevote_hash = self.vote_queue.pop()
+                if prevote_hash in self.prevotes:
+                    vote_data = self.prevotes.pop(prevote_hash, None)
+                    txb.append_votemsg(
+                        exchange_rate=vote_data["px"],
+                        denom=vote_data["denom"],
+                        feeder=vote_data["feeder"],
+                        validator=vote_data["validator"],
+                        salt=vote_data["salt"]
+                    )
+
+            # Preview the Tx
+            print("----- PreviewPreparedTx -----") 
+            preview_tx = txb.build_incomplete()
+            print(json.dumps(preview_tx, indent=2, sort_keys=True))
+            if len(preview_tx["msgs"]) > 0:
+                pass
+                # Sign the Tx
+                signed_tx = txb.sign(self.feeder_wallet)
+                print("----- PreviewSignedTx -----") 
+                print(json.dumps(signed_tx, indent=2, sort_keys=True))
+                print("----- Action -----")
+                """
+                Sometimes the account does not update...
+                """
+                # Bump the sequence
+                self.feeder_wallet.account_seq += 1
+                # TODO Broadcast the TX
+                broadcast_vote_res = await self.full_node.broadcast_tx_async(json.dumps({
+                    "tx": signed_tx["value"],
+                    "mode": "sync",
+                }))
+                print(broadcast_vote_res)
+
+        # Submit PreVotes Last, Followed by Votes
+        txb = Transaction(
+            self.chain_id, 
+            self.feeder_wallet.account_num,
+            self.feeder_wallet.account_seq,
+        )
         # 1. Make the Random Salt
         """ Salt Length is Between 1 - 4 """
         rate_salt = token_hex(2)
@@ -182,18 +232,7 @@ class Oracle:
             "validator": self.validator_addr,
             "salt": rate_salt,
         }
-        # For Votes in VoteQueue, Try to Find the Hash In Prevotes
-        while len(self.vote_queue) > 0:
-            prevote_hash = self.vote_queue.pop()
-            if prevote_hash in self.prevotes:
-                vote_data = self.prevotes.pop(prevote_hash, None)
-                txb.append_votemsg(
-                    exchange_rate=vote_data["px"],
-                    denom=vote_data["denom"],
-                    feeder=vote_data["feeder"],
-                    validator=vote_data["validator"],
-                    salt=vote_data["salt"]
-                )
+
         # Preview the Tx
         print("----- PreviewPreparedTx -----") 
         print(json.dumps(txb.build_incomplete(), indent=2, sort_keys=True))
@@ -208,11 +247,12 @@ class Oracle:
         # Bump the sequence
         self.feeder_wallet.account_seq += 1
         # TODO Broadcast the TX
-        broadcast_res = await self.full_node.broadcast_tx_async(json.dumps({
+        broadcast_prevote_res = await self.full_node.broadcast_tx_async(json.dumps({
             "tx": signed_tx["value"],
             "mode": "sync",
         }))
-        print(broadcast_res)
+        print(broadcast_prevote_res)
+
         """ Some Errors 
 {'jsonrpc': '2.0', 'id': '', 'error': {'code': -32602, 'message': 'Invalid params', 'data': 'error converting http params to arguments: json: cannot unmarshal object into Go value of type types.Tx'}}
 
@@ -245,13 +285,15 @@ class Oracle:
         When Oracle is in Init State, height=0, vote_period=0
         - Trigger Vote to see if we can vote in the current vote_period
         """
+        height_adjustment = oracle.last_vote_period + oracle.vote_period + 1
         new_action = None
         if oracle.state == OracleState.init:
             new_action = Input.vote
             payload = (current_height, vote_period)
             print(f"Current BH/VP: {current_height} / {vote_period}")
             new_action.setValue(payload)
-        elif oracle.last_vote_period < vote_period:
+        elif (oracle.last_vote_period < vote_period and
+                current_height > height_adjustment):
             new_action = Input.vote
             payload = (current_height, vote_period)
             print(f"Current BH/VP: {current_height} / {vote_period}")
