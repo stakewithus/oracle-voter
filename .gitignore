@@ -3,3 +3,5 @@ venv/
 *.swo
 *.swn
 __pycache__
+
+*.log

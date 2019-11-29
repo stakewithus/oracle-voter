@@ -3,9 +3,10 @@ import simplejson as json
 
 
 class HttpError(Exception):
-    def __init__(self, message, status_code):
+    def __init__(self, message, status_code, result):
         super().__init__(message)
         self.status_code = status_code
+        self.result = result
 
 
 async def http_get(url, params=dict()):
@@ -15,12 +16,12 @@ async def http_get(url, params=dict()):
         #
         http_resp = await session.get(url, params=params)
         status_code = http_resp.status
-        # print(status_code)
         raw_text = await http_resp.text()
-        result = json.loads(raw_text)
         # print(result)
+        if len(raw_text) > 0:
+            result = json.loads(raw_text)
         if status_code != 200:
-            raise HttpError(f"Url: {url}", status_code)
+            raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
     except (HttpError,) as err:
@@ -36,12 +37,11 @@ async def http_post(url, params=dict(), post_data=dict()):
         #
         http_resp = await session.post(url, params=params, data=post_data)
         status_code = http_resp.status
-        print(status_code)
         raw_text = await http_resp.text()
-        result = json.loads(raw_text)
-        print(result)
+        if len(raw_text) > 0:
+            result = json.loads(raw_text)
         if status_code != 200:
-            raise HttpError(f"Url: {url}", status_code)
+            raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
     except (HttpError,) as err:

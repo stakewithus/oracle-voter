@@ -1,14 +1,19 @@
-from decimal import Decimal
+from decimal import Decimal, Context
 
 
-def test_build_vote_tx(tx_builder):
+def test_build_vote_tx(tx_builder, account_addrs, wei_value):
+    feeder, validator = account_addrs
+
     txb = tx_builder("soju-0012", 45, 0)
 
     txb.append_votemsg(
-        exchange_rate=Decimal("8000.0"),
+        exchange_rate=Decimal("8000.0").quantize(
+            wei_value,
+            context=Context(prec=30),
+        ),
         denom="ukrw",
-        feeder="terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
-        validator="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+        feeder=f"{feeder}",
+        validator=f"{validator}",
         salt="1234",
     )
     result = txb.build_incomplete()
@@ -24,8 +29,8 @@ def test_build_vote_tx(tx_builder):
                 "exchange_rate": "8000.000000000000000000",
                 "salt": "1234",
                 "denom": "ukrw",
-                "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
-                "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+                "feeder": f"{feeder}",
+                "validator": f"{validator}",
             },
         }],
         "memo": "",
@@ -33,13 +38,23 @@ def test_build_vote_tx(tx_builder):
     assert result == expected
 
 
-def test_fully_build_vote_tx(tx_builder, feeder_wallet):
+def test_fully_build_vote_tx(
+    tx_builder,
+    feeder_wallet,
+    account_addrs,
+    wei_value,
+):
+    feeder, validator = account_addrs
+
     txb = tx_builder("soju-0012", 45, 0)
     txb.append_votemsg(
-        exchange_rate=Decimal("8000.0"),
+        exchange_rate=Decimal("8000.0").quantize(
+            wei_value,
+            context=Context(prec=30),
+        ),
         denom="ukrw",
-        feeder="terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
-        validator="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+        feeder=f"{feeder}",
+        validator=f"{validator}",
         salt="1234",
     )
 
@@ -54,8 +69,8 @@ def test_fully_build_vote_tx(tx_builder, feeder_wallet):
                     "exchange_rate": "8000.000000000000000000",
                     "salt": "1234",
                     "denom": "ukrw",
-                    "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
-                    "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+                    "feeder": f"{feeder}",
+                    "validator": f"{validator}",
                 },
             }],
             "fee": {"amount": [], "gas": "200000"},
@@ -67,13 +82,23 @@ def test_fully_build_vote_tx(tx_builder, feeder_wallet):
     assert result == expected
 
 
-def test_sign_built_vote_tx(tx_builder, feeder_wallet):
+def test_sign_built_vote_tx(
+    tx_builder,
+    feeder_wallet,
+    account_addrs,
+    wei_value,
+):
+    feeder, validator = account_addrs
+
     txb = tx_builder("soju-0012", 45, 0)
     txb.append_votemsg(
-        exchange_rate=Decimal("8000.0"),
+        exchange_rate=Decimal("8000.0").quantize(
+            wei_value,
+            context=Context(prec=30),
+        ),
         denom="ukrw",
-        feeder="terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
-        validator="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+        feeder=f"{feeder}",
+        validator=f"{validator}",
         salt="1234",
     )
 
@@ -88,8 +113,8 @@ def test_sign_built_vote_tx(tx_builder, feeder_wallet):
                     "exchange_rate": "8000.000000000000000000",
                     "salt": "1234",
                     "denom": "ukrw",
-                    "feeder": "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",
-                    "validator": "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
+                    "feeder": f"{feeder}",
+                    "validator": f"{validator}",
                 },
             }],
             "memo": "",

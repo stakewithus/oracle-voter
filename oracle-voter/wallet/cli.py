@@ -22,7 +22,7 @@ class CLIWallet:
         # Get the account address
         self.get_addr()
 
-    async def update_state(self):
+    async def sync_state(self):
         account_raw = await self.lcd_node.get_account(self.account_addr)
         self.account_num = account_raw["result"]["value"]["account_number"]
         new_seq = int(account_raw["result"]["value"]["sequence"])
