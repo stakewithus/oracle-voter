@@ -1,6 +1,6 @@
 import asyncio
 
-from chain.core import FullNode, LCDNode, Transaction
+from chain.core import Transaction
 from wallet.cli import CLIWallet
 
 
@@ -57,6 +57,12 @@ class Oracle:
         self.lcd_node = lcd_node
         self.validator_addr = validator_addr
         self.wallet = wallet
+        self.transition_map = {
+            (State.init, NewVotingPeriod): (None, State.querying),
+        }
+
+    async def next(candidate_input):
+        pass
 
 
 async def main(
@@ -90,6 +96,5 @@ async def main(
             wallet=wallet,
         )
 
-        oracle.start()
     except:
         pass

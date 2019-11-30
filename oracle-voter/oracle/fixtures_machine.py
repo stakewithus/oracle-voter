@@ -32,7 +32,8 @@ def vp_0_mock_account(
 def voting_e2e_3_periods(
     m,
     node_addr,
-    feeder_addr,
+    cli_accounts,
 ):
+    feeder_addr = cli_accounts[1]
     # Mock the Initial Wallet Sync State Call
     vp_0_mock_account(m, node_addr, feeder_addr)
