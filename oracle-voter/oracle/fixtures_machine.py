@@ -25,7 +25,8 @@ def vp_0_mock_account(
         }
     }
     # url_qs = urlencode({})
-    url = f"http://{node_addr}/auth/accounts/{feeder_addr}"
+    url = f"{node_addr}/auth/accounts/{feeder_addr}"
+    print(url)
     m.get(url, status=200, payload=payload)
 
 

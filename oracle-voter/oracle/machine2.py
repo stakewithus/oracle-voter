@@ -1,7 +1,7 @@
-import asyncio
+# import asyncio
 
-from chain.core import Transaction
-from wallet.cli import CLIWallet
+# from chain.core import Transaction
+# from wallet.cli import CLIWallet
 
 
 class State:
@@ -11,7 +11,6 @@ class State:
 
 State.init = State("Init")
 State.ready = State("Ready")
-State.querying = State("Querying")
 State.pre_decision = State("PreDecision")
 State.voting = State("Voting")
 State.prevoting = State("PreVoting")
@@ -44,6 +43,13 @@ class Transition:
         assert 0, "Method run() not implemented"
 
 
+class QueryRateAndChain(Transition):
+
+    @staticmethod
+    async def run(oracle_state, input_data):
+        pass
+
+
 class Oracle:
 
     def __init__(
@@ -57,12 +63,30 @@ class Oracle:
         self.lcd_node = lcd_node
         self.validator_addr = validator_addr
         self.wallet = wallet
+        self.state = State.init
         self.transition_map = {
-            (State.init, NewVotingPeriod): (None, State.querying),
+            (State.init, NewVotingPeriod): (
+                None, QueryRateAndChain, State.pre_decision
+            ),
         }
 
-    async def next(candidate_input):
-        pass
+    async def next(self, candidate_input):
+        decision_path = self.transition_map.get(
+            (self.state, candidate_input.__class__),
+            None,
+        )
+        print(decision_path)
+        if decision_path is not None:
+            condition, transition, next_state = decision_path
+            # Check that condition is fulfilled
+            if condition is None:
+                await transition.run(self, candidate_input)
+                self.state = next_state
+            else:
+                check = condition.test(candidate_input)
+                if check is True:
+                    await transition.run(self, candidate_input)
+                    self.state = next_state
 
 
 async def main(
@@ -72,6 +96,7 @@ async def main(
     wallet_name="",
     wallet_password="",
 ):
+    """
     lcd_node = LCDNode(lcd_node_addr)
     # TODO Write Test Case to check for following failures
     # - wallet_name is not found in the list of accounts
@@ -98,3 +123,4 @@ async def main(
 
     except:
         pass
+    """

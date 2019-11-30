@@ -29,7 +29,9 @@ async def main_voting_e2e_3_periods(
     # Start the Machine
     input_1 = NewVotingPeriod(76777, 15355)
     await oracle.next(input_1)
-    assert oracle.state == State.ready
+
+    # Check Next State is Correct
+    assert oracle.state == State.pre_decision
 
 
 def test_voting_e2e_3_periods(

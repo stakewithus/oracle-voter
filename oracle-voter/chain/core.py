@@ -108,11 +108,11 @@ class Transaction:
         return result
 
 
-class FullNode:
+class LCDNode:
 
     def __init__(
         self,
-        addr="http://127.0.0.1:26657",
+        addr="http://127.0.0.1:1317",
     ):
         self.addr = addr
 
@@ -127,15 +127,6 @@ class FullNode:
         )
         return http_res
 
-
-class LCDNode:
-
-    def __init__(
-        self,
-        addr="http://127.0.0.1:1317",
-    ):
-        self.addr = addr
-
     async def get_latest_block(self):
         target_url = f"{self.addr}/blocks/latest"
         params = dict()
@@ -144,6 +135,7 @@ class LCDNode:
 
     async def get_account(self, account):
         target_url = f"{self.addr}/auth/accounts/{account}"
+        print(target_url)
         params = dict()
         http_res = await client.http_get(target_url, params=params)
         return http_res
