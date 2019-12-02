@@ -1,8 +1,6 @@
 import asyncio
 from oracle.machine2 import (
     Oracle,
-    State,
-    NewVotingPeriod,
 )
 
 from oracle.fixtures_machine import voting_e2e_3_periods
@@ -21,22 +19,18 @@ async def main_voting_e2e_3_periods(
     oracle = Oracle(
         vote_period=vote_period,
         lcd_node=lcd_node,
-        validator_addr=cli_accounts[1],
+        validator_addr=cli_accounts[0],
         wallet=wallet,
     )
-    assert oracle.state == State.init
-
-    # Start the Machine
-    input_1 = NewVotingPeriod(76777, 15355)
-    await oracle.next(input_1)
-
-    # Check Next State is Correct
-    assert oracle.state == State.pre_decision
+    height_1 = 76777
+    # Feed in the first height
+    await oracle.new_height(height_1)
 
 
 def test_voting_e2e_3_periods(
     http_mock,
     node_addr,
+    lcd_node,
     cli_accounts,
     feeder_wallet,
 ):
@@ -48,7 +42,7 @@ def test_voting_e2e_3_periods(
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_voting_e2e_3_periods(
         5,
-        node_addr,
+        lcd_node,
         cli_accounts,
         feeder_wallet,
     ))

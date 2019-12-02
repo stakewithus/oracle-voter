@@ -27,6 +27,7 @@ def node_addr():
 @pytest.fixture
 def lcd_node(node_addr):
     n = LCDNode(addr=node_addr)
+    print(n)
     return n
 
 

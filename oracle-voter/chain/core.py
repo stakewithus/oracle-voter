@@ -146,6 +146,12 @@ class LCDNode:
         http_res = await client.http_get(target_url, params=params)
         return http_res
 
+    async def get_oracle_active_denoms(self):
+        target_url = f"{self.addr}/oracle/denoms/actives"
+        params = dict()
+        http_res = await client.http_get(target_url, params=params)
+        return http_res
+
     async def get_oracle_prevotes_validator(
         self,
         denom="",
