@@ -7,11 +7,14 @@ from functools import partial, reduce
 from secrets import token_hex
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
-from decimal import Decimal
+from aiohttp.client_exceptions import ClientConnectionError
+from decimal import Decimal, Context
 import asyncio
 import simplejson as json
-from feeds.markets import supported_rates
+
+from feeds.markets import supported_rates, WEI_VALUE
 from chain.core import Transaction
+from common.client import HttpError
 
 denom_supported_rates = [
     market_info["denom"] for market_info in supported_rates
@@ -47,6 +50,12 @@ class Oracle:
     """
     External Calls
     """
+
+    async def retrieve_height(self):
+        raw_res = await self.lcd_node.get_latest_block()
+        block_meta = raw_res["block_meta"]
+        current_height = int(block_meta["header"]["height"])
+        await self.new_height(int(current_height))
 
     async def retrieve_chain_rates(self):
         raw_res = await self.lcd_node.get_oracle_rates()
@@ -104,7 +113,7 @@ class Oracle:
     async def query_feed(self, market_info):
         feed_px = await market_info["feed"]()
         feed_weight = market_info["weight"]
-        return (feed_px / Decimal(feed_weight))
+        return ((feed_px * Decimal(feed_weight)) / Decimal("100"))
 
     async def get_denom_px(self, raw_markets):
         markets = raw_markets[0]
@@ -120,6 +129,7 @@ class Oracle:
         rate_salt = token_hex(2)
         # 2. Make the Payload
         hash_payload = f"{rate_salt}:{str(px)}:{denom}:{self.validator_addr}"
+        print(f"HashPayload: {hash_payload}")
         # 3. SHA256 Payload
         digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
         digest.update(bytes(hash_payload, "utf-8"))
@@ -140,9 +150,11 @@ class Oracle:
         ]
 
         if len(raw_markets) > 0:
-            market_px = await self.get_denom_px(raw_markets)
+            raw_px = await self.get_denom_px(raw_markets)
+            market_px = raw_px.quantize(WEI_VALUE, context=Context(prec=40))
             # TODO Check that our market_px is not too far away from chain px
             rate_salt, hashed = self.get_prevote_hash(denom, market_px)
+            print(f"PreVote: {rate_salt} Hashed: {hashed}")
             self.prior_prevotes[hashed] = {
                 "px": market_px,
                 "salt": rate_salt,
@@ -160,33 +172,41 @@ class Oracle:
             signed_tx = self.vote_msg_builder.sign(self.wallet)
             print("----- PreviewSignedTx Votes-----")
             print(json.dumps(signed_tx, indent=2, sort_keys=True))
-            """
-            broadcast_vote_res = await self.lcd_node.broadcast_tx_async(
-                json.dumps({
-                    "tx": signed_tx["value"],
-                    "mode": "sync",
-                })
-            )
-            print(broadcast_vote_res)
-            """
-            self.wallet.account_seq += 1
+            try:
+                broadcast_vote_res = await self.lcd_node.broadcast_tx_async(
+                    json.dumps({
+                        "tx": signed_tx["value"],
+                        "mode": "block",
+                    })
+                )
+                print(broadcast_vote_res)
+                self.wallet.account_seq += 1
+            except (HttpError, ClientConnectionError) as err:
+                print("Client Connection Issues")
+                print(err)
+                self.wallet.account_seq += 1
 
     async def sign_and_broadcast_prevotes(self):
         if len(self.prevote_msg_builder.msgs) > 0:
             #
-            signed_tx = self.prevote_msg_builder.sign(self.wallet)
-            print("----- PreviewSignedTx PreVotes-----")
-            print(json.dumps(signed_tx, indent=2, sort_keys=True))
-            print("----- Action -----")
-            broadcast_vote_res = await self.lcd_node.broadcast_tx_async(
-                json.dumps({
-                    "tx": signed_tx["value"],
-                    "mode": "sync",
-                })
-            )
-            print("BroadCast Res")
-            print(broadcast_vote_res)
-            self.wallet.account_seq += 1
+            try:
+                signed_tx = self.prevote_msg_builder.sign(self.wallet)
+                print("----- PreviewSignedTx PreVotes-----")
+                print(json.dumps(signed_tx, indent=2, sort_keys=True))
+                print("----- Action -----")
+                broadcast_vote_res = await self.lcd_node.broadcast_tx_async(
+                    json.dumps({
+                        "tx": signed_tx["value"],
+                        "mode": "sync",
+                    })
+                )
+                print("Broadcast Res")
+                print(broadcast_vote_res)
+                self.wallet.account_seq += 1
+            except (HttpError, ClientConnectionError) as err:
+                print("Client Connection Issues")
+                print(err)
+                self.wallet.account_seq += 1
 
     async def new_height(self, height):
         vote_period = self.period_getter(height)

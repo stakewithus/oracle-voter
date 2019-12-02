@@ -1,5 +1,6 @@
 import aiohttp
 import simplejson as json
+from aiohttp.client_exceptions import ClientConnectionError
 
 
 class HttpError(Exception):
@@ -12,9 +13,10 @@ class HttpError(Exception):
 async def http_get(url, params=dict()):
     result = {}
     session = aiohttp.ClientSession()
+    timeout = aiohttp.ClientTimeout(total=None, sock_connect=2, sock_read=2)
     try:
         #
-        http_resp = await session.get(url, params=params)
+        http_resp = await session.get(url, params=params, timeout=timeout)
         status_code = http_resp.status
         raw_text = await http_resp.text()
         # print(result)
@@ -24,10 +26,9 @@ async def http_get(url, params=dict()):
             raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
-    except (HttpError,) as err:
-        if isinstance(err, HttpError):
-            await session.close()
-            raise err
+    except (HttpError, ClientConnectionError) as err:
+        await session.close()
+        raise err
 
 
 async def http_post(url, params=dict(), post_data=dict()):
@@ -44,7 +45,7 @@ async def http_post(url, params=dict(), post_data=dict()):
             raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
-    except (HttpError,) as err:
-        if isinstance(err, HttpError):
-            await session.close()
-            raise err
+    except (HttpError, ClientConnectionError) as err:
+        print("Caught Error")
+        await session.close()
+        raise err

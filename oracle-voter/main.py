@@ -1,16 +1,64 @@
-import asyncio
-from oracle.machine import main
+"""terra-oracle-voter
+Usage:
+  main.py start <validator> <wallet> [--node <lcd_node_addr> --vote-period <vote_period> --password <password>]
+  main.py ( -h | --help )
+  main.py version
+Options:
+  -h --help    Show this screen.
+"""
 
-if __name__ == "__main__":
+from docopt import docopt
+import asyncio
+
+from oracle.machine2 import Oracle
+from chain.core import LCDNode
+from wallet.cli import CLIWallet
+
+
+async def start_coro(args):
+    lcd_node_addr = args["<lcd_node_addr>"]
+    validator_addr = args["<validator>"]
+    wallet_name = args["<wallet>"]
+    wallet_password = args["<password>"]
+    vote_period = args["<vote_period>"]
+
+    n = LCDNode(addr=lcd_node_addr)
+    w = CLIWallet(
+        wallet_name,
+        wallet_password,
+        lcd_node=n,
+    )
+    # Sync Wallet
+    await w.sync_state()
+
+    # Init the Start Machine
+    oracle = Oracle(
+        vote_period=vote_period,
+        lcd_node=n,
+        validator_addr=validator_addr,
+        wallet=w,
+    )
+    while True:
+        await oracle.retrieve_height()
+        await asyncio.sleep(0.50)
+
+
+def start(args):
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(
-        vote_period=5,
-        lcd_node_addr="http://18.197.124.43:1321",
-        # full_node_addr="http://18.197.124.43:56657",
-        full_node_addr="http://18.197.124.43:1321",
-        # Thanks Dokia
-        # validator_addr="terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",
-        validator_addr="terravaloper1emscfpz9jjtj8tj2nh70y25uywcakldsj76luz",
-        wallet_name="feeder",
-        wallet_password="12345678",
-    ))
+    loop.run_until_complete(start_coro(args))
+    
+
+cmds = {
+  "start": start,
+}
+
+
+def handle_args(args):
+    # Find Cmd
+    cmd_key, = [c for c in cmds.keys() if args[c] is True]
+    cmds[cmd_key](args)
+
+
+if __name__ == '__main__':
+    arguments = docopt(__doc__, version='terra-oracle-voter:v0.0.1')
+    handle_args(arguments)

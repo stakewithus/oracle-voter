@@ -9,3 +9,4 @@ plyvel==1.1.0
 bitcoinlib==0.4.11
 bech32==1.1.0
 cryptography==2.8
+docopt==0.6.2
