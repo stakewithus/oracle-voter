@@ -11,6 +11,7 @@ from aiohttp.client_exceptions import ClientConnectionError
 from decimal import Decimal, Context
 import asyncio
 import simplejson as json
+from collections import deque, OrderedDict
 
 from feeds.markets import supported_rates, WEI_VALUE
 from chain.core import Transaction
@@ -45,17 +46,31 @@ class Oracle:
         self.current_rates = []
 
         self.prior_prevotes = dict()
+
+        self.q_vote_tx_hash = deque()
+        self.q_prevote_tx_hash = deque()
+
         self.vote_msg_builder = None
         self.prevote_msg_builder = None
+
+        self.hist_votes = OrderedDict()
+        self.hist_prevotes = OrderedDict()
+
     """
     External Calls
     """
+
+    async def retrieve_tx(self, tx_hash):
+        raw_res = await self.lcd_node.get_tx(tx_hash)
+        return raw_res
 
     async def retrieve_height(self):
         raw_res = await self.lcd_node.get_latest_block()
         block_meta = raw_res["block_meta"]
         current_height = int(block_meta["header"]["height"])
-        await self.new_height(int(current_height))
+        if current_height > self.current_height:
+            self.current_height = current_height
+            await self.new_height(int(current_height))
 
     async def retrieve_chain_rates(self):
         raw_res = await self.lcd_node.get_oracle_rates()
@@ -93,8 +108,6 @@ class Oracle:
     async def append_vote_msg(self, denom):
         prevotes = await self.retrieve_prevotes(denom)
         if len(prevotes) > 0:
-            print("Prevotes")
-            print(prevotes)
             prevote_data = prevotes[0]
             # Attempt to get the prevote hash from current hashmap
             prevote_cached = self.prior_prevotes.get(
@@ -129,7 +142,6 @@ class Oracle:
         rate_salt = token_hex(2)
         # 2. Make the Payload
         hash_payload = f"{rate_salt}:{str(px)}:{denom}:{self.validator_addr}"
-        print(f"HashPayload: {hash_payload}")
         # 3. SHA256 Payload
         digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
         digest.update(bytes(hash_payload, "utf-8"))
@@ -154,7 +166,6 @@ class Oracle:
             market_px = raw_px.quantize(WEI_VALUE, context=Context(prec=40))
             # TODO Check that our market_px is not too far away from chain px
             rate_salt, hashed = self.get_prevote_hash(denom, market_px)
-            print(f"PreVote: {rate_salt} Hashed: {hashed}")
             self.prior_prevotes[hashed] = {
                 "px": market_px,
                 "salt": rate_salt,
@@ -170,16 +181,22 @@ class Oracle:
         if len(self.vote_msg_builder.msgs) > 0:
             #
             signed_tx = self.vote_msg_builder.sign(self.wallet)
-            print("----- PreviewSignedTx Votes-----")
-            print(json.dumps(signed_tx, indent=2, sort_keys=True))
             try:
                 broadcast_vote_res = await self.lcd_node.broadcast_tx_async(
                     json.dumps({
                         "tx": signed_tx["value"],
-                        "mode": "block",
+                        "mode": "sync",
                     })
                 )
-                print(broadcast_vote_res)
+                # self.last_vote_tx_hash = broadcast_vote_res["txhash"]
+                query_height = self.current_height + 4
+                vote_data = query_height, broadcast_vote_res["txhash"]
+                self.q_vote_tx_hash.append(vote_data)
+                self.hist_votes[broadcast_vote_res["txhash"]] = {
+                    "msgs": signed_tx["value"]["msg"],
+                    "sent_height": self.current_height,
+                }
+
                 self.wallet.account_seq += 1
             except (HttpError, ClientConnectionError) as err:
                 print("Client Connection Issues")
@@ -191,27 +208,106 @@ class Oracle:
             #
             try:
                 signed_tx = self.prevote_msg_builder.sign(self.wallet)
-                print("----- PreviewSignedTx PreVotes-----")
-                print(json.dumps(signed_tx, indent=2, sort_keys=True))
-                print("----- Action -----")
-                broadcast_vote_res = await self.lcd_node.broadcast_tx_async(
+                broadcast_prevote_res = await self.lcd_node.broadcast_tx_async(
                     json.dumps({
                         "tx": signed_tx["value"],
                         "mode": "sync",
                     })
                 )
-                print("Broadcast Res")
-                print(broadcast_vote_res)
+                # self.last_prevote_tx_hash = broadcast_prevote_res["txhash"]
+                query_height = self.current_height + 4
+                prevote_data = query_height, broadcast_prevote_res["txhash"]
+                self.q_prevote_tx_hash.append(prevote_data)
+                self.hist_prevotes[broadcast_prevote_res["txhash"]] = {
+                    "msgs": signed_tx["value"]["msg"],
+                    "sent_height": self.current_height,
+                }
+
                 self.wallet.account_seq += 1
             except (HttpError, ClientConnectionError) as err:
                 print("Client Connection Issues")
                 print(err)
                 self.wallet.account_seq += 1
 
+    def print_tx_hist(self, tx_hist):
+        idx = 1
+        for tx_hash, tx_body in tx_hist.items():
+            print(f"{idx}. [{tx_hash}]")
+            print("-- Msgs")
+            for msg in tx_body["msgs"]:
+                msg_type = msg["type"]
+                msg_val = msg["value"]
+                if msg_type == "oracle/MsgExchangeRateVote":
+                    print(f"""-- Px {msg_val["exchange_rate"]} Salt: {msg_val["salt"]} \
+Denom: {msg_val["denom"]}""")
+                else:
+                    print(f"""-- Hash {msg_val["hash"]} Denom: \
+{msg_val["denom"]}""")
+            if tx_body.get("result", None) is not None:
+                success = tx_body.get("result")
+                print(f"-- Result: {success}")
+                if success is not True:
+                    print("-- Failed Logs")
+                    for failed_log in tx_body.get("failed_logs"):
+                        print(failed_log)
+            idx += 1
+
+    async def query_tx(self, tx_info):
+        tx_type, tx_hash = tx_info
+        raw_res = await self.retrieve_tx(tx_hash)
+        raw_logs = raw_res["logs"]
+        success = True
+        failed_logs = [
+            (log_row["msg_index"], log_row["log"])
+            for log_row in raw_logs if log_row["success"] is not True
+        ]
+
+        if len(failed_logs) > 0:
+            success = False
+
+        if tx_type == "vote":
+            # Check that all messages passed
+            self.hist_votes[tx_hash]["result"] = success
+            if success is not True:
+                self.hist_votes[tx_hash]["failed_logs"] = failed_logs
+        else:
+            self.hist_prevotes[tx_hash]["result"] = success
+            if success is not True:
+                self.hist_prevotes[tx_hash]["failed_logs"] = failed_logs
+
+    async def check_txs(self, height):
+        tx_hashes = list()
+        if len(self.q_vote_tx_hash) > 0:
+            check_height, vote_tx_hash = self.q_vote_tx_hash.popleft()
+            if height >= check_height:
+                tx_hashes.append(('vote', vote_tx_hash))
+            else:
+                self.q_vote_tx_hash.appendleft((check_height, vote_tx_hash))
+        if len(self.q_prevote_tx_hash) > 0:
+            check_height, prevote_tx_hash = self.q_prevote_tx_hash.popleft()
+            if height >= check_height:
+                tx_hashes.append(('prevote', prevote_tx_hash))
+            else:
+                self.q_prevote_tx_hash.appendleft(
+                    (check_height, prevote_tx_hash)
+                )
+
+        tx_queries = [self.query_tx(tx_info) for tx_info in tx_hashes]
+        await asyncio.gather(*tx_queries)
+        print(f"----------({height})---------")
+        print(f"----------Votes ---------")
+        self.print_tx_hist(self.hist_votes)
+        print(f"\n----------PreVotes ---------")
+        self.print_tx_hist(self.hist_prevotes)
+        print(f"----------({height})---------\n\n")
+
     async def new_height(self, height):
         vote_period = self.period_getter(height)
-        if vote_period > self.current_vote_period and \
-                height > self.current_height:
+        # Check for tx success / fail
+        await self.check_txs(height)
+
+        # Vote Period Increased
+        if vote_period > self.current_vote_period:
             self.current_vote_period = vote_period
             await self.new_vote_period()
 
@@ -230,7 +326,6 @@ class Oracle:
             denom for denom in active_rates
             if denom_supported_rates.count(denom) > 0
         ]
-        print(calc_rates)
         # For each support rate
 
         # 1. Get PreVotes
@@ -248,6 +343,9 @@ class Oracle:
         ]
         await asyncio.gather(*append_vote_tasks)
         await self.sign_and_broadcast_votes()
+
+        await asyncio.sleep(0.300)
+
         # 3a. Get Rate From Chain
         # 3b. Get Rates from various markets
         # 3c. Append PreVoteMsg to VoteTx

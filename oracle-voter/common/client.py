@@ -19,9 +19,18 @@ async def http_get(url, params=dict()):
         http_resp = await session.get(url, params=params, timeout=timeout)
         status_code = http_resp.status
         raw_text = await http_resp.text()
-        # print(result)
         if len(raw_text) > 0:
             result = json.loads(raw_text)
+        if result.get("block_meta", None) is None:
+            pass
+            """
+            print(f"[GET] {url} StatusCode: {status_code} Params: {params}\
+    \nResult:\n{result}")
+            """
+        else:
+            # print(f"""[GET] {url} StatusCode: {status_code} Params: {params}\
+            # \nResult:\n{result["block_meta"]}""")
+            pass
         if status_code != 200:
             raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
@@ -41,11 +50,14 @@ async def http_post(url, params=dict(), post_data=dict()):
         raw_text = await http_resp.text()
         if len(raw_text) > 0:
             result = json.loads(raw_text)
+        """
+        print(f"[POST] {url} StatusCode: {status_code} \
+Params: {params} Data: {post_data} \nResult:\n{result}")
+        """
         if status_code != 200:
             raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
     except (HttpError, ClientConnectionError) as err:
-        print("Caught Error")
         await session.close()
         raise err

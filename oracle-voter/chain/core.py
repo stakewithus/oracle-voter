@@ -116,6 +116,15 @@ class LCDNode:
     ):
         self.addr = addr
 
+    async def get_tx(self, tx_hash):
+        target_url = f"{self.addr}/txs/{tx_hash}"
+        params = {}
+        http_res = await client.http_get(
+            target_url,
+            params=params,
+        )
+        return http_res
+
     async def broadcast_tx_async(self, tx):
         target_url = f"{self.addr}/txs"
         params = {}
