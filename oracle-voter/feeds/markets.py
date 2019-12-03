@@ -6,6 +6,11 @@ from functools import partial
 
 WEI_VALUE = Decimal("10.0") ** -18
 
+ABSTAIN_VOTE_PX = Decimal("-1.00").quantize(
+    WEI_VALUE,
+    context=Context(prec=40),
+)
+
 # Feed Sources
 exchange_coinone = coinone.Coinone("https://api.coinone.co.kr")
 
