@@ -1,4 +1,5 @@
 # oracle-voter
+
 ## Usage
 
 ```
@@ -8,6 +9,13 @@ Usage:
   python oracle-voter/main.py version
 Options:
   -h --help    Show this screen.
+
+```
+
+## Testing
+
+```
+pytest --cov=oracle-voter
 
 ```
 
