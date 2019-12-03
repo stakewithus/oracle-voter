@@ -1,4 +1,15 @@
 # oracle-voter
+## Usage
+
+```
+Usage:
+  python oracle-voter/main.py start <validator> <wallet> [--node <lcd_node_addr> --vote-period <vote_period> --password <password>]
+  python oracle-voter/main.py ( -h | --help )
+  python oracle-voter/main.py version
+Options:
+  -h --help    Show this screen.
+
+```
 
 ## Install Dependencies
 
@@ -21,11 +32,6 @@ source venv/bin/activate
 
 - Valid Account Name and Password stored in home folder for `terracli`
 
-## Entrypoint
-
-```
-(venv) python oracle-voter/main.py
-```
 
 ## Common Problems
 
