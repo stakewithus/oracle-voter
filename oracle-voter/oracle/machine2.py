@@ -56,6 +56,8 @@ class Oracle:
         self.hist_votes = OrderedDict()
         self.hist_prevotes = OrderedDict()
 
+        self.rate_luna_ukrw = Decimal("-1.00")
+
     """
     External Calls
     """
@@ -128,11 +130,11 @@ class Oracle:
         feed_weight = market_info["weight"]
         return ((feed_px * Decimal(feed_weight)) / Decimal("100"))
 
-    async def get_denom_px(self, raw_markets):
-        markets = raw_markets[0]
+    async def get_denom_px(self, markets):
         task_feed = [
             self.query_feed(market_info) for market_info in markets
         ]
+        # TODO Assign weights to different markets
         market_pxs = await asyncio.gather(*task_feed)
         market_px = reduce(lambda acc, x: acc + x, market_pxs, Decimal('0.0'))
         return market_px
@@ -156,15 +158,30 @@ class Oracle:
         # On Chain Last Exchange Rate
         chain_rate = Decimal(chain_rates[0])
         # Get Rate Markets
-        raw_markets = [
-            rate_info["markets"] for rate_info in supported_rates if
+        denom_rate_info = [
+            rate_info for rate_info in supported_rates if
             rate_info["denom"] == denom
         ]
 
-        if len(raw_markets) > 0:
+        if len(denom_rate_info) > 0:
+            raw_markets = denom_rate_info[0]["markets"]
+
             raw_px = await self.get_denom_px(raw_markets)
-            market_px = raw_px.quantize(WEI_VALUE, context=Context(prec=40))
+            sug_market_px = raw_px.quantize(WEI_VALUE, context=Context(prec=40))
+            #
             # TODO Check that our market_px is not too far away from chain px
+            #
+            if denom_rate_info[0]["pair_type"] == "native":
+                market_px = sug_market_px
+            elif raw_px == Decimal("-1.00"):
+                market_px = Decimal("-1.00").quantize(WEI_VALUE, context=Context(prec=40))
+            else:
+                market_px = sug_market_px * self.rate_luna_krw
+
+            if denom == "ukrw":
+                self.rate_luna_krw = market_px
+
+            print(f"Denom: {denom} Rate: {market_px} ChainRate: {chain_rate}")
             rate_salt, hashed = self.get_prevote_hash(denom, market_px)
             self.prior_prevotes[hashed] = {
                 "px": market_px,
@@ -304,11 +321,11 @@ Denom: {msg_val["denom"]}""")
         # Do some cleanup, show only most recent 3
 
         if len(self.hist_votes) > 3:
-            head = list(self.hist_votes.items())[0]
+            head = list(self.hist_votes.keys())[0]
             self.hist_votes.pop(head, None)
 
         if len(self.hist_prevotes) > 3:
-            head = list(self.hist_prevotes.items())[0]
+            head = list(self.hist_prevotes.keys())[0]
             self.hist_prevotes.pop(head, None)
 
     async def new_height(self, height):
@@ -360,11 +377,18 @@ Denom: {msg_val["denom"]}""")
         # 3b. Get Rates from various markets
         # 3c. Append PreVoteMsg to VoteTx
         # 3d. If PreVoteMsgs length > 0, broadcast PreVoteTx
+        calc_rates = [
+            denom for denom in active_rates
+            if (denom_supported_rates.count(denom) > 0 and denom != "ukrw")
+        ]
         self.prevote_msg_builder = Transaction(
             self.chain_id,
             self.wallet.account_num,
             self.wallet.account_seq,
         )
+        # Filter Out the base pair luna/ukrw
+        # Get Luna UKRW First
+        await self.append_prevote_msg("ukrw")
 
         append_prevote_tasks = [
             self.append_prevote_msg(denom) for denom in calc_rates
