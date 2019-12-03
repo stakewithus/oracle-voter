@@ -301,6 +301,16 @@ Denom: {msg_val["denom"]}""")
         self.print_tx_hist(self.hist_prevotes)
         print(f"----------({height})---------\n\n")
 
+        # Do some cleanup, show only most recent 3
+
+        if len(self.hist_votes) > 3:
+            head = list(self.hist_votes.items())[0]
+            self.hist_votes.pop(head, None)
+
+        if len(self.hist_prevotes) > 3:
+            head = list(self.hist_prevotes.items())[0]
+            self.hist_prevotes.pop(head, None)
+
     async def new_height(self, height):
         vote_period = self.period_getter(height)
         # Check for tx success / fail
