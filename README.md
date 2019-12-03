@@ -3,13 +3,19 @@
 ## Usage
 
 ```
+"""terra-oracle-voter
 Usage:
-  python oracle-voter/main.py start <validator> <wallet> [--node <lcd_node_addr> --vote-period <vote_period> --password <password>]
+  python oracle-voter/main.py start <validator> <wallet> [ --node <lcd_node_addr> \
+    --vote-period <vote_period> \
+    --password <password> \
+    --chain-id <chain_id> \
+]
   python oracle-voter/main.py ( -h | --help )
-  python oracle-voter/main.py version
+  python oracle-voter/main.py ( -v | --version )
 Options:
   -h --help    Show this screen.
-
+  -v --version    Show version.
+"""
 ```
 
 ## Testing

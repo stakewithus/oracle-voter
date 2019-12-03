@@ -1,10 +1,15 @@
 """terra-oracle-voter
 Usage:
-  main.py start <validator> <wallet> [--node <lcd_node_addr> --vote-period <vote_period> --password <password>]
+  main.py start <validator> <wallet> [ --node <lcd_node_addr> \
+    --vote-period <vote_period> \
+    --password <password> \
+    --chain-id <chain_id> \
+]
   main.py ( -h | --help )
-  main.py version
+  main.py ( -v | --version )
 Options:
   -h --help    Show this screen.
+  -v --version    Show version.
 """
 
 from docopt import docopt
@@ -13,6 +18,7 @@ import asyncio
 from oracle.machine2 import Oracle
 from chain.core import LCDNode
 from wallet.cli import CLIWallet
+from _version import __version__
 
 
 async def start_coro(args):
@@ -21,6 +27,7 @@ async def start_coro(args):
     wallet_name = args["<wallet>"]
     wallet_password = args["<password>"]
     vote_period = args["<vote_period>"]
+    chain_id = args["<chain_id>"]
 
     n = LCDNode(addr=lcd_node_addr)
     w = CLIWallet(
@@ -37,6 +44,7 @@ async def start_coro(args):
         lcd_node=n,
         validator_addr=validator_addr,
         wallet=w,
+        chain_id=chain_id,
     )
     while True:
         await oracle.retrieve_height()
@@ -46,7 +54,7 @@ async def start_coro(args):
 def start(args):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(start_coro(args))
-    
+
 
 cmds = {
   "start": start,
@@ -60,5 +68,5 @@ def handle_args(args):
 
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__, version='terra-oracle-voter:v0.0.1')
+    arguments = docopt(__doc__, version=__version__)
     handle_args(arguments)
