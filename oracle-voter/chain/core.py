@@ -83,10 +83,12 @@ class Transaction:
         return incomplete_tx
 
     def build(self):
+        # Arrange Messages
+        sorted_msgs = sorted(self.msgs, key=lambda itm: itm["value"]["denom"])
         tx = {
             "type": "core/StdTx",
             "value": {
-                "msg": self.msgs,
+                "msg": sorted_msgs,
                 "fee": self.fee,
                 "memo": self.memo,
                 "signatures": list(),
@@ -144,7 +146,6 @@ class LCDNode:
 
     async def get_account(self, account):
         target_url = f"{self.addr}/auth/accounts/{account}"
-        print(target_url)
         params = dict()
         http_res = await client.http_get(target_url, params=params)
         return http_res

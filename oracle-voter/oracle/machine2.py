@@ -57,6 +57,10 @@ class Oracle:
         self.hist_prevotes = OrderedDict()
 
         self.rate_luna_ukrw = Decimal("-1.00")
+    
+        # Denom to Hash
+        self.hash_map = dict()
+        self.hist_hash_map = dict()
 
     """
     External Calls
@@ -116,6 +120,16 @@ class Oracle:
                 prevote_data["hash"],
                 None,
             )
+            # Get Previous Hashed
+            hash_info = self.hash_map.get(denom, None)
+            if hash_info is None:
+                return None
+            rate_salt, hashed = self.hash_map.get(denom)
+            exchange_rate = prevote_cached["px"]
+            salt = prevote_cached["salt"]
+
+            new_salt, new_hashed = self.get_prevote_hash(denom, exchange_rate, salt)
+
             if prevote_cached is not None:
                 self.vote_msg_builder.append_votemsg(
                     exchange_rate=prevote_cached["px"],
@@ -139,9 +153,10 @@ class Oracle:
         market_px = reduce(lambda acc, x: acc + x, market_pxs, Decimal('0.0'))
         return market_px
 
-    def get_prevote_hash(self, denom, px):
-        # 1. Get Salt
-        rate_salt = token_hex(2)
+    def get_prevote_hash(self, denom, px, rate_salt=None):
+        if rate_salt is None:
+            # 1. Get Salt
+            rate_salt = token_hex(2)
         # 2. Make the Payload
         hash_payload = f"{rate_salt}:{str(px)}:{denom}:{self.validator_addr}"
         # 3. SHA256 Payload
@@ -176,13 +191,21 @@ class Oracle:
             elif raw_px == Decimal("-1.00"):
                 market_px = Decimal("-1.00").quantize(WEI_VALUE, context=Context(prec=40))
             else:
-                market_px = sug_market_px * self.rate_luna_krw
+                market_px = Decimal(sug_market_px * self.rate_luna_krw).quantize(WEI_VALUE, context=Context(prec=40))
 
             if denom == "ukrw":
                 self.rate_luna_krw = market_px
 
-            print(f"Denom: {denom} Rate: {market_px} ChainRate: {chain_rate}")
             rate_salt, hashed = self.get_prevote_hash(denom, market_px)
+
+            self.hash_map[denom] = (rate_salt, hashed)
+            
+            if self.hist_hash_map.get(denom, None) is None:
+                self.hist_hash_map[denom] = dict()
+
+            # self.hist_hash_map[denom][rate_salt] = hashed
+            self.hist_hash_map[denom][hashed] = rate_salt
+            
             self.prior_prevotes[hashed] = {
                 "px": market_px,
                 "salt": rate_salt,
@@ -255,23 +278,37 @@ class Oracle:
                 msg_type = msg["type"]
                 msg_val = msg["value"]
                 if msg_type == "oracle/MsgExchangeRateVote":
+
                     print(f"""-- Px {msg_val["exchange_rate"]} Salt: {msg_val["salt"]} \
-Denom: {msg_val["denom"]}""")
+Denom: {msg_val["denom"]} """)
                 else:
+                    denom = msg_val["denom"]
+                    salt = self.hist_hash_map[denom][msg_val["hash"]]
+
                     print(f"""-- Hash {msg_val["hash"]} Denom: \
-{msg_val["denom"]}""")
+{msg_val["denom"]} Salt: {salt}""")
             if tx_body.get("result", None) is not None:
+                tx_height = tx_body["height"]
                 success = tx_body.get("result")
-                print(f"-- Result: {success}")
+                print(f"-- Result: {success} Height: {tx_height}")
                 if success is not True:
                     print("-- Failed Logs")
                     for failed_log in tx_body.get("failed_logs"):
                         print(failed_log)
             idx += 1
 
-    async def query_tx(self, tx_info):
+    async def query_tx(self, height, tx_info):
         tx_type, tx_hash = tx_info
-        raw_res = await self.retrieve_tx(tx_hash)
+        try:
+            raw_res = await self.retrieve_tx(tx_hash)
+        except HttpError:
+            new_check_height = height + 1
+            if tx_type == "vote":
+                self.q_vote_tx_hash.appendleft((new_check_height), tx_hash)
+            else:
+                self.q_prevote_tx_hash.appendleft((new_check_height), tx_hash)
+
+        raw_height = raw_res["height"]
         raw_logs = raw_res["logs"]
         success = True
         failed_logs = [
@@ -285,10 +322,12 @@ Denom: {msg_val["denom"]}""")
         if tx_type == "vote":
             # Check that all messages passed
             self.hist_votes[tx_hash]["result"] = success
+            self.hist_votes[tx_hash]["height"] = raw_height
             if success is not True:
                 self.hist_votes[tx_hash]["failed_logs"] = failed_logs
         else:
             self.hist_prevotes[tx_hash]["result"] = success
+            self.hist_prevotes[tx_hash]["height"] = raw_height
             if success is not True:
                 self.hist_prevotes[tx_hash]["failed_logs"] = failed_logs
 
@@ -309,7 +348,10 @@ Denom: {msg_val["denom"]}""")
                     (check_height, prevote_tx_hash)
                 )
 
-        tx_queries = [self.query_tx(tx_info) for tx_info in tx_hashes]
+        tx_querier = partial(self.query_tx, height)
+
+        tx_queries = [tx_querier(tx_info) for tx_info in tx_hashes]
+
         await asyncio.gather(*tx_queries)
         print(f"----------({height})---------")
         print(f"----------Votes ---------")

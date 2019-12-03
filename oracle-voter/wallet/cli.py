@@ -48,7 +48,7 @@ class CLIWallet:
     ):
         # Write out the payload as JSON into a temporary file
         with open("cli-to-sign.json", "w") as target:
-            print(json.dumps(payload, indent=2))
+            # print(json.dumps(payload, indent=2))
             target.write(json.dumps(payload))
         #
         ps = subprocess.Popen(
