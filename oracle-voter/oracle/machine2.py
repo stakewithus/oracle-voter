@@ -13,7 +13,7 @@ import asyncio
 import simplejson as json
 from collections import deque, OrderedDict
 
-from feeds.markets import supported_rates, WEI_VALUE
+from feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX
 from chain.core import Transaction
 from common.client import HttpError
 
@@ -166,12 +166,14 @@ class Oracle:
         return rate_salt, hashed
 
     async def append_prevote_msg(self, denom):
-        chain_rates = [
-            rate_row["amount"] for rate_row in self.current_rates if
-            rate_row["denom"] == denom
-        ]
-        # On Chain Last Exchange Rate
-        chain_rate = Decimal(chain_rates[0])
+        chain_rate = ABSTAIN_VOTE_PX
+        if self.current_rates is not None:
+            chain_rates = [
+                rate_row["amount"] for rate_row in self.current_rates if
+                rate_row["denom"] == denom
+            ]
+            # On Chain Last Exchange Rate
+            chain_rate = Decimal(chain_rates[0])
         # Get Rate Markets
         denom_rate_info = [
             rate_info for rate_info in supported_rates if
@@ -182,16 +184,35 @@ class Oracle:
             raw_markets = denom_rate_info[0]["markets"]
 
             raw_px = await self.get_denom_px(raw_markets)
-            sug_market_px = raw_px.quantize(WEI_VALUE, context=Context(prec=40))
+            sug_market_px = raw_px.quantize(
+                WEI_VALUE,
+                context=Context(prec=40),
+            )
             #
             # TODO Check that our market_px is not too far away from chain px
             #
             if denom_rate_info[0]["pair_type"] == "native":
                 market_px = sug_market_px
             elif raw_px == Decimal("-1.00"):
-                market_px = Decimal("-1.00").quantize(WEI_VALUE, context=Context(prec=40))
+                market_px = Decimal("-1.00").quantize(
+                    WEI_VALUE,
+                    context=Context(prec=40),
+                )
             else:
-                market_px = Decimal(sug_market_px * self.rate_luna_krw).quantize(WEI_VALUE, context=Context(prec=40))
+                market_px = \
+                    Decimal(sug_market_px * self.rate_luna_krw).quantize(
+                        WEI_VALUE,
+                        context=Context(prec=40),
+                    )
+            # If we are unable to get the latest exchange rates, abstain vote
+            if chain_rate == ABSTAIN_VOTE_PX:
+                market_px = ABSTAIN_VOTE_PX
+            else:
+                # Check that market_px is not more than x percent
+                # From last onchain price
+                px_pct_diff = Decimal(1 - (market_px / chain_rate)).copy_abs()
+                if (px_pct_diff > Decimal("0.02")):
+                    market_px = ABSTAIN_VOTE_PX
 
             if denom == "ukrw":
                 self.rate_luna_krw = market_px
@@ -200,13 +221,13 @@ class Oracle:
             rate_salt, hashed = self.get_prevote_hash(denom, market_px)
 
             self.hash_map[denom] = (rate_salt, hashed)
-            
+
             if self.hist_hash_map.get(denom, None) is None:
                 self.hist_hash_map[denom] = dict()
 
             # self.hist_hash_map[denom][rate_salt] = hashed
             self.hist_hash_map[denom][hashed] = rate_salt
-            
+
             self.prior_prevotes[hashed] = {
                 "px": market_px,
                 "salt": rate_salt,
