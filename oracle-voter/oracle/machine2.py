@@ -119,21 +119,16 @@ class Oracle:
                 prevote_data["hash"],
                 None,
             )
-            # Get Previous Hashed
-            hash_info = self.hash_map.get(denom, None)
-            if hash_info is None:
-                return None
-            rate_salt, hashed = self.hash_map.get(denom)
-            exchange_rate = prevote_cached["px"]
-            salt = prevote_cached["salt"]
-
-            new_salt, new_hashed = self.get_prevote_hash(
-                denom,
-                exchange_rate,
-                salt,
-            )
-
+            # If prevote_cached is None
+            # We do not have information on this pre-vote
+            # Hence we cannot vote
             if prevote_cached is not None:
+                # Get Previous Hashed
+                hash_info = self.hash_map.get(denom, None)
+                if hash_info is None:
+                    return None
+                rate_salt, hashed = self.hash_map.get(denom)
+
                 self.vote_msg_builder.append_votemsg(
                     exchange_rate=prevote_cached["px"],
                     denom=denom,
