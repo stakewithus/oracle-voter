@@ -57,7 +57,6 @@ class Oracle:
         self.hist_prevotes = OrderedDict()
 
         self.rate_luna_ukrw = Decimal("-1.00")
-    
         # Denom to Hash
         self.hash_map = dict()
         self.hist_hash_map = dict()
@@ -128,7 +127,11 @@ class Oracle:
             exchange_rate = prevote_cached["px"]
             salt = prevote_cached["salt"]
 
-            new_salt, new_hashed = self.get_prevote_hash(denom, exchange_rate, salt)
+            new_salt, new_hashed = self.get_prevote_hash(
+                denom,
+                exchange_rate,
+                salt,
+            )
 
             if prevote_cached is not None:
                 self.vote_msg_builder.append_votemsg(
@@ -217,8 +220,10 @@ class Oracle:
             if denom == "ukrw":
                 self.rate_luna_krw = market_px
 
-
-            rate_salt, hashed = self.get_prevote_hash(denom, market_px)
+            rate_salt, hashed = self.get_prevote_hash(
+                denom,
+                market_px,
+            )
 
             self.hash_map[denom] = (rate_salt, hashed)
 
@@ -351,7 +356,6 @@ Denom: {msg_val["denom"]} """)
                 self.q_vote_tx_hash.appendleft((new_check_height, tx_hash))
             else:
                 self.q_prevote_tx_hash.appendleft((new_check_height, tx_hash))
-
 
     async def check_txs(self, height):
         tx_hashes = list()
