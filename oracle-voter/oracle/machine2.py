@@ -196,6 +196,7 @@ class Oracle:
             if denom == "ukrw":
                 self.rate_luna_krw = market_px
 
+
             rate_salt, hashed = self.get_prevote_hash(denom, market_px)
 
             self.hash_map[denom] = (rate_salt, hashed)
@@ -301,35 +302,35 @@ Denom: {msg_val["denom"]} """)
         tx_type, tx_hash = tx_info
         try:
             raw_res = await self.retrieve_tx(tx_hash)
+            raw_height = raw_res["height"]
+            raw_logs = raw_res["logs"]
+            success = True
+            failed_logs = [
+                (log_row["msg_index"], log_row["log"])
+                for log_row in raw_logs if log_row["success"] is not True
+            ]
+
+            if len(failed_logs) > 0:
+                success = False
+
+            if tx_type == "vote":
+                # Check that all messages passed
+                self.hist_votes[tx_hash]["result"] = success
+                self.hist_votes[tx_hash]["height"] = raw_height
+                if success is not True:
+                    self.hist_votes[tx_hash]["failed_logs"] = failed_logs
+            else:
+                self.hist_prevotes[tx_hash]["result"] = success
+                self.hist_prevotes[tx_hash]["height"] = raw_height
+                if success is not True:
+                    self.hist_prevotes[tx_hash]["failed_logs"] = failed_logs
         except HttpError:
             new_check_height = height + 1
             if tx_type == "vote":
-                self.q_vote_tx_hash.appendleft((new_check_height), tx_hash)
+                self.q_vote_tx_hash.appendleft((new_check_height, tx_hash))
             else:
-                self.q_prevote_tx_hash.appendleft((new_check_height), tx_hash)
+                self.q_prevote_tx_hash.appendleft((new_check_height, tx_hash))
 
-        raw_height = raw_res["height"]
-        raw_logs = raw_res["logs"]
-        success = True
-        failed_logs = [
-            (log_row["msg_index"], log_row["log"])
-            for log_row in raw_logs if log_row["success"] is not True
-        ]
-
-        if len(failed_logs) > 0:
-            success = False
-
-        if tx_type == "vote":
-            # Check that all messages passed
-            self.hist_votes[tx_hash]["result"] = success
-            self.hist_votes[tx_hash]["height"] = raw_height
-            if success is not True:
-                self.hist_votes[tx_hash]["failed_logs"] = failed_logs
-        else:
-            self.hist_prevotes[tx_hash]["result"] = success
-            self.hist_prevotes[tx_hash]["height"] = raw_height
-            if success is not True:
-                self.hist_prevotes[tx_hash]["failed_logs"] = failed_logs
 
     async def check_txs(self, height):
         tx_hashes = list()

@@ -1,4 +1,6 @@
 def get_vote_period(raw_vote_period, raw_height):
+    print(raw_vote_period)
+    print(raw_height)
     height = int(raw_height)
     vote_period = int(raw_vote_period)
     vote_left = height % vote_period
