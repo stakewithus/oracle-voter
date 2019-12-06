@@ -73,6 +73,7 @@ class Oracle:
         raw_res = await self.lcd_node.get_latest_block()
         block_meta = raw_res["block_meta"]
         current_height = int(block_meta["header"]["height"])
+        print(f"Current height: {current_height}")
         if current_height > self.current_height:
             self.current_height = current_height
             await self.new_height(int(current_height))

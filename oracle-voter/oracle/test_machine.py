@@ -22,9 +22,9 @@ async def main_voting_e2e_3_periods(
         validator_addr=cli_accounts[0],
         wallet=wallet,
     )
-    height_1 = 76777
     # Feed in the first height
-    await oracle.new_height(height_1)
+    # await oracle.new_height(18547)
+    await oracle.retrieve_height()
 
 
 def test_voting_e2e_3_periods(
@@ -32,11 +32,20 @@ def test_voting_e2e_3_periods(
     node_addr,
     lcd_node,
     cli_accounts,
+    feed_coinone_url,
+    feed_ukfx_url,
     feeder_wallet,
 ):
 
     # Mock all required endpoints
-    voting_e2e_3_periods(http_mock, node_addr, cli_accounts)
+    voting_e2e_3_periods(
+        http_mock,
+        node_addr,
+        feed_coinone_url,
+        feed_ukfx_url,
+        cli_accounts,
+        feeder_wallet,
+    )
 
     # Start Loop
     loop = asyncio.get_event_loop()

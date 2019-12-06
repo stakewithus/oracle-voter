@@ -12,6 +12,7 @@ class CLIWallet:
         self,
         name,
         password,
+        account_addr,
         home=None,
         lcd_node={},
     ):
@@ -20,7 +21,20 @@ class CLIWallet:
         self.home = home
         self.lcd_node = lcd_node
         # Get the account address
-        self.get_addr()
+        # self.get_addr()
+        self.account_addr = account_addr
+
+    @staticmethod
+    def get_addr(name):
+        result = subprocess.check_output((
+            "terracli",
+            "keys",
+            "show",
+            f"{name}",
+            "-a",
+        ))
+        account_addr = str(result, "utf-8").strip()
+        return account_addr
 
     async def sync_state(self):
         account_raw = await self.lcd_node.get_account(self.account_addr)
@@ -28,16 +42,6 @@ class CLIWallet:
         new_seq = int(account_raw["result"]["value"]["sequence"])
         if new_seq > self.account_seq:
             self.account_seq = new_seq
-
-    def get_addr(self):
-        result = subprocess.check_output((
-            "terracli",
-            "keys",
-            "show",
-            f"{self.name}",
-            "-a",
-        ))
-        self.account_addr = str(result, "utf-8").strip()
 
     def offline_sign(
         self,
