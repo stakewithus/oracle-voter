@@ -1,5 +1,6 @@
 import aiohttp
 import simplejson as json
+from simplejson.errors import JSONDecodeError
 from aiohttp.client_exceptions import ClientConnectionError
 
 
@@ -25,6 +26,10 @@ async def http_get(url, params=dict()):
             raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
+    except JSONDecodeError:
+        # Problems decoding JSON
+        await session.close()
+        return None
     except (HttpError, ClientConnectionError) as err:
         await session.close()
         raise err
@@ -44,6 +49,10 @@ async def http_post(url, params=dict(), post_data=dict()):
             raise HttpError(f"Url: {url}", status_code, result)
         await session.close()
         return result
+    except JSONDecodeError:
+        # Problems decoding JSON
+        await session.close()
+        return None
     except (HttpError, ClientConnectionError) as err:
         await session.close()
         raise err

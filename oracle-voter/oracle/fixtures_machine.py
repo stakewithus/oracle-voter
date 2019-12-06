@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+
 def vp_0_mock_account(
     m,
     node_addr="",
