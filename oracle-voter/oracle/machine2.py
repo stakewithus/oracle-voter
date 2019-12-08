@@ -141,15 +141,18 @@ class Oracle:
     async def query_feed(self, market_info):
         feed_px = await market_info["feed"]()
         feed_weight = market_info["weight"]
-        return ((feed_px * Decimal(feed_weight)) / Decimal("100"))
+        return (feed_px * Decimal(feed_weight))
 
     async def get_denom_px(self, markets):
         task_feed = [
             self.query_feed(market_info) for market_info in markets
         ]
-        # TODO Assign weights to different markets
+        feed_weights = [market_info["weight"] for market_info in markets]
+        # Sum of all the weights assigned in the feed's markets
+        total_weight = reduce(lambda acc, x: acc + x, feed_weights, Decimal("0.0"))
         market_pxs = await asyncio.gather(*task_feed)
-        market_px = reduce(lambda acc, x: acc + x, market_pxs, Decimal('0.0'))
+        # Get the mean price of denom
+        market_px = reduce(lambda acc, px: acc + (px / total_weight), market_pxs, Decimal("0.0"))
         return market_px
 
     def get_prevote_hash(self, denom, px, rate_salt=None):
