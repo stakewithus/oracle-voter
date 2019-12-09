@@ -1,7 +1,14 @@
-from common import client
-import pytest
+"""
+
+session_mock.side_effect = [
+    SessionOk(),
+    Session404(),
+]
 
 
+@patch(
 @pytest.fixture
-def http_get_client():
-    return client.http_get
+def mock_client_session():
+    pass
+aiohttp.ClientSession = session_mock
+"""
