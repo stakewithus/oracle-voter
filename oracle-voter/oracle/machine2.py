@@ -73,7 +73,6 @@ class Oracle:
         raw_res = await self.lcd_node.get_latest_block()
         block_meta = raw_res["block_meta"]
         current_height = int(block_meta["header"]["height"])
-        print(f"Current height: {current_height}")
         if current_height > self.current_height:
             self.current_height = current_height
             await self.new_height(int(current_height))
@@ -149,16 +148,27 @@ class Oracle:
         ]
         feed_weights = [market_info["weight"] for market_info in markets]
         # Sum of all the weights assigned in the feed's markets
-        total_weight = reduce(lambda acc, x: acc + x, feed_weights, Decimal("0.0"))
+        total_weight = reduce(
+            lambda acc, x: acc + x,
+            feed_weights,
+            Decimal("0.0"),
+        )
         market_pxs = await asyncio.gather(*task_feed)
         # Get the mean price of denom
-        market_px = reduce(lambda acc, px: acc + (px / total_weight), market_pxs, Decimal("0.0"))
+        market_px = reduce(
+            lambda acc, px: acc + (px / total_weight),
+            market_pxs,
+            Decimal("0.0"),
+        )
         return market_px
+
+    def get_rate_salt(self):
+        return token_hex(2)
 
     def get_prevote_hash(self, denom, px, rate_salt=None):
         if rate_salt is None:
             # 1. Get Salt
-            rate_salt = token_hex(2)
+            rate_salt = self.get_rate_salt()
         # 2. Make the Payload
         hash_payload = f"{rate_salt}:{str(px)}:{denom}:{self.validator_addr}"
         # 3. SHA256 Payload
@@ -254,6 +264,7 @@ class Oracle:
                         "mode": "sync",
                     })
                 )
+                # TODO Validate that the Vote Has Passed sync
                 # self.last_vote_tx_hash = broadcast_vote_res["txhash"]
                 query_height = self.current_height + 4
                 vote_data = query_height, broadcast_vote_res["txhash"]
@@ -280,8 +291,9 @@ class Oracle:
                         "mode": "sync",
                     })
                 )
+                # TODO Validate that the PreVote Has Passed sync
                 # self.last_prevote_tx_hash = broadcast_prevote_res["txhash"]
-                query_height = self.current_height + 4
+                query_height = self.current_height + 1
                 prevote_data = query_height, broadcast_prevote_res["txhash"]
                 self.q_prevote_tx_hash.append(prevote_data)
                 self.hist_prevotes[broadcast_prevote_res["txhash"]] = {
@@ -359,22 +371,33 @@ Denom: {msg_val["denom"]} """)
     async def check_txs(self, height):
         tx_hashes = list()
         if len(self.q_vote_tx_hash) > 0:
-            check_height, vote_tx_hash = self.q_vote_tx_hash.popleft()
-            if height >= check_height:
-                tx_hashes.append(('vote', vote_tx_hash))
-            else:
-                self.q_vote_tx_hash.appendleft((check_height, vote_tx_hash))
+            leftover_hash = deque()
+            while(len(self.q_vote_tx_hash) > 0):
+                check_height, vote_tx_hash = self.q_vote_tx_hash.popleft()
+                if height >= check_height:
+                    tx_hashes.append(('vote', vote_tx_hash))
+                else:
+                    leftover_hash.appendleft((check_height, vote_tx_hash))
+            self.q_vote_tx_hash = leftover_hash
+
         if len(self.q_prevote_tx_hash) > 0:
-            check_height, prevote_tx_hash = self.q_prevote_tx_hash.popleft()
-            if height >= check_height:
-                tx_hashes.append(('prevote', prevote_tx_hash))
-            else:
-                self.q_prevote_tx_hash.appendleft(
-                    (check_height, prevote_tx_hash)
-                )
+            leftover_hash = deque()
+            while(len(self.q_prevote_tx_hash) > 0):
+                check_height, prevote_tx_hash = self.q_prevote_tx_hash.popleft()
+                if height >= check_height:
+                    tx_hashes.append(('prevote', prevote_tx_hash))
+                else:
+                    leftover_hash.appendleft(
+                        (check_height, prevote_tx_hash)
+                    )
+            self.q_prevote_tx_hash = leftover_hash
 
         tx_querier = partial(self.query_tx, height)
 
+        print("Tx Hashes")
+        print(tx_hashes)
+        print("Tx Hashes")
+        print(tx_hashes)
         tx_queries = [tx_querier(tx_info) for tx_info in tx_hashes]
 
         await asyncio.gather(*tx_queries)
@@ -398,6 +421,8 @@ Denom: {msg_val["denom"]} """)
     async def new_height(self, height):
         vote_period = self.period_getter(height)
         # Check for tx success / fail
+        print(f"New Height: {height}")
+        print("Check Tx Called...")
         await self.check_txs(height)
 
         # Vote Period Increased

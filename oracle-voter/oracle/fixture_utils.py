@@ -4,6 +4,38 @@ from aioresponses import CallbackResult
 import simplejson as json
 
 
+def mock_account_info(
+  m,
+  node_addr,
+  feeder_addr,
+  public_key,
+  account_num,
+  height,
+  account_seq,
+):
+    template = {
+        "height": f"{height}",
+        "result": {
+            "type": "core/Account",
+            "value": {
+                "address": f"{feeder_addr}",
+                "coins": [{
+                    "denom": "uluna",
+                    "amount": "100000000",
+                }],
+                "public_key": {
+                    "type": "tendermint/PubKeySecp256k1",
+                    "value": f"{public_key}",
+                },
+                "account_number": f"{account_num}",
+                "sequence": f"{account_seq}",
+            }
+        }
+    }
+    url = f"{node_addr}/auth/accounts/{feeder_addr}"
+    m.get(url, status=200, payload=template)
+
+
 def mock_block_data(
     m,
     node_addr,
@@ -152,12 +184,16 @@ def mock_broadcast_tx(
     node_addr,
     txhash,
     post_data=dict(),
-    logs=dict(),
+    logs=list(),
 ):
 
     def process_post_req(txhash, post_data, logs, *args, **kwargs):
         raw_post_data = kwargs["data"]
         recv_post_data = json.loads(raw_post_data)
+        # print("RECV")
+        # print(recv_post_data)
+        # print("POST")
+        # print(post_data)
         assert recv_post_data == post_data
         payload = {
             "height": "0",
@@ -171,3 +207,20 @@ def mock_broadcast_tx(
     processor = partial(process_post_req, txhash, post_data, logs)
     url = f"{node_addr}/txs"
     m.post(url, callback=processor)
+
+
+def mock_query_tx(
+    m,
+    node_addr,
+    height,
+    txhash,
+    logs=list(),
+):
+    payload = {
+        "height": f"{height}",
+        "txhash": f"{txhash}",
+        "logs": logs,
+    }
+
+    url = f"{node_addr}/txs/{txhash}"
+    m.get(url, payload=payload)

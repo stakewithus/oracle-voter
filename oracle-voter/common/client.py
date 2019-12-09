@@ -30,9 +30,12 @@ async def http_get(url, params=dict()):
         # Problems decoding JSON
         await session.close()
         return None
-    except (HttpError, ClientConnectionError) as err:
+    except HttpError as err:
         await session.close()
         raise err
+    except ClientConnectionError:
+        await session.close()
+        raise HttpError(f"Url: {url}", 404, "Unable to connect")
 
 
 async def http_post(url, params=dict(), post_data=dict()):
