@@ -8,6 +8,7 @@ from oracle.machine2 import (
 from oracle.fixture_18549 import mock_height_18549
 from oracle.fixture_18550 import mock_height_18550
 from oracle.fixture_18555 import mock_height_18555
+from oracle.fixture_18559 import mock_height_18559
 
 
 async def main_voting_e2e_3_periods(
@@ -84,12 +85,24 @@ async def main_voting_e2e_3_periods(
     # Mock the Salts
     salt_mock = Mock()
     salt_mock.side_effect = [
-        "ff2e",
-        "2d3c",
-        "1e47",
-        "d534",
+        "3595",
+        "39ff",
+        "4721",
+        "0c26",
     ]
     oracle.get_rate_salt = salt_mock
+    await oracle.retrieve_height()
+    #
+    # Mock Height 18559
+    #
+    mock_height_18559(
+        http_mock,
+        node_addr,
+        feed_coinone_url,
+        feed_ukfx_url,
+        cli_accounts,
+        feeder_wallet,
+    )
     await oracle.retrieve_height()
 
 

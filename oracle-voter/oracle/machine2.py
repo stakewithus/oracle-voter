@@ -95,14 +95,6 @@ class Oracle:
         prevotes = raw_res["result"]
         return prevotes
 
-    async def retrieve_votes(self, denom):
-        raw_res = await self.lcd_node.get_oracle_votes_validator(
-            denom=denom,
-            validator_addr=self.validator_addr,
-        )
-        votes = raw_res["result"]
-        return votes
-
     async def sync_wallet(self):
         await self.wallet.sync_state()
 
@@ -393,11 +385,6 @@ Denom: {msg_val["denom"]} """)
             self.q_prevote_tx_hash = leftover_hash
 
         tx_querier = partial(self.query_tx, height)
-
-        print("Tx Hashes")
-        print(tx_hashes)
-        print("Tx Hashes")
-        print(tx_hashes)
         tx_queries = [tx_querier(tx_info) for tx_info in tx_hashes]
 
         await asyncio.gather(*tx_queries)
