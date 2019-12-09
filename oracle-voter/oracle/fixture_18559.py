@@ -1,15 +1,8 @@
 from functools import partial
-from unittest.mock import Mock
 
 from oracle.fixture_utils import (
     mock_account_info,
     mock_block_data,
-    mock_active_denoms,
-    mock_onchain_rates,
-    mock_chain_prevotes,
-    mock_feed_ukfx_px,
-    mock_feed_coinone_orderbook,
-    mock_broadcast_tx,
     mock_query_tx,
 )
 
@@ -36,26 +29,6 @@ def mock_height_18559(
         acc_num,
     )
     stub_blockdata = partial(mock_block_data, m, node_addr)
-    stub_active_denoms = partial(mock_active_denoms, m, node_addr, height)
-    stub_onchain_rates = partial(mock_onchain_rates, m, node_addr, height)
-    stub_chain_prevotes = partial(
-        mock_chain_prevotes,
-        m,
-        node_addr,
-        validator_addr,
-        height,
-    )
-    stub_feed_coinone_orderbook = partial(
-        mock_feed_coinone_orderbook,
-        m,
-        feed_coinone_url,
-    )
-    stub_feed_ukfx_px = partial(
-        mock_feed_ukfx_px,
-        m,
-        feed_ukfx_url,
-    )
-    stub_broadcast_tx = partial(mock_broadcast_tx, m, node_addr)
     stub_query_tx = partial(mock_query_tx, m, node_addr)
 
     # Mock Get Block
