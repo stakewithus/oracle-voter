@@ -41,7 +41,7 @@ def main():
         help="validator operator address (valoper)",
     )
     parser.add_argument(
-        "--from",
+        "--wallet",
         metavar="wallet_name",
         help="Terra Feeder Account",
         default="feeder",
@@ -96,10 +96,10 @@ def main():
     pargs = {
         "node": args.node,
         "validator": args.validator,
-        "wallet_name": args.wallet_name,
-        "wallet_password": args.wallet_pass,
+        "wallet_name": args.wallet,
+        "wallet_password": args.password,
         "chain_id": args.chain_id,
-        "wallet_dir": args.home_dir,
+        "wallet_dir": args.home,
         "vote_period": args.vote_period,
         "gas_prices": args.gas_prices,
     }
