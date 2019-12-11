@@ -18,14 +18,12 @@ class CLIWallet:
         name,
         password,
         account_addr,
-        home=None,
         lcd_node={},
         gas_prices="0.1uluna",
         home_dir=None,
     ):
         self.name = name
         self.password = password
-        self.home = home
         self.lcd_node = lcd_node
         # Get the account address
         # self.get_addr()
@@ -35,9 +33,8 @@ class CLIWallet:
         self.home_dir = home_dir or os.path.expanduser("~/.terracli")
         self.account_balance = Decimal("0.0")
 
-    """
     @staticmethod
-    def get_addr(name):
+    def get_addr(name, home_dir):
         result = subprocess.check_output((
             "terracli",
             "keys",
@@ -45,11 +42,10 @@ class CLIWallet:
             f"{name}",
             "-a",
             "--home",
-            f"{self.home_dir}"
+            f"{home_dir}"
         ))
         account_addr = str(result, "utf-8").strip()
         return account_addr
-    """
 
     async def sync_state(self):
         account_raw = await self.lcd_node.get_account(self.account_addr)

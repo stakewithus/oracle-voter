@@ -10,13 +10,19 @@ from _version import __version__
 
 async def start_coro(args):
     n = LCDNode(addr=args["node"])
+    home_dir = args.get("wallet_dir", None) or os.path.expanduser("~/.terracli")
+
+    account_addr = CLIWallet.get_addr(args["wallet_name"], home_dir)
+
     w = CLIWallet(
         args["wallet_name"],
         args["wallet_password"],
+        account_addr,
         lcd_node=n,
         gas_prices=args["gas_prices"],
-        home_dir=args["wallet_dir"]
+        home_dir=home_dir,
     )
+    
     # Sync Wallet
     await w.sync_state()
 
