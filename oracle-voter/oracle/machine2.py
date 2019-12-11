@@ -162,9 +162,13 @@ class Oracle:
             # We do not have information on this pre-vote
             # Hence we cannot vote
             if prevote_cached is not None:
+                prevote_vp = prevote_cached["vp"]
                 # Get Previous Hashed
                 hash_info = self.hash_map.get(denom, None)
-                if hash_info is not None:
+                # Do not reveal vote if prior prevote voting period
+                # Is the same as the current voting period
+                if hash_info is not None and \
+                        self.current_vote_period > prevote_vp:
                     rate_salt, hashed = self.hash_map.get(denom)
 
                     self.vote_msg_builder.append_votemsg(
@@ -258,6 +262,7 @@ class Oracle:
             self.prior_prevotes[hashed] = {
                 "px": market_px,
                 "salt": rate_salt,
+                "vp": int(self.current_vote_period)
             }
             self.prevote_msg_builder.append_prevotemsg(
                 hashed=hashed,
