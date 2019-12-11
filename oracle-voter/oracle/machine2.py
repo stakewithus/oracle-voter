@@ -151,6 +151,9 @@ class Oracle:
 
     async def append_vote_msg(self, denom):
         prevotes = await self.retrieve_prevotes(denom)
+        print("---- PreVotes Seen ----")
+        print(json.dumps(prevotes, indent=2))
+        print("---- End PreVotes Seen ----")
         if len(prevotes) > 0:
             prevote_data = prevotes[0]
             # Attempt to get the prevote hash from current hashmap
@@ -163,6 +166,7 @@ class Oracle:
             # Hence we cannot vote
             if prevote_cached is not None:
                 prevote_vp = prevote_cached["vp"]
+                print(f"PreVote VP: {prevote_vp} Current VP: {self.current_vote_period}")
                 # Get Previous Hashed
                 hash_info = self.hash_map.get(denom, None)
                 # Do not reveal vote if prior prevote voting period
