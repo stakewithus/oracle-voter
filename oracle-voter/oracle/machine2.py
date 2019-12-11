@@ -65,6 +65,10 @@ class Oracle:
     External Calls
     """
 
+    """
+    We should have predictable error returns or default value returns
+    if anoy of the below external call throws
+    """
     async def retrieve_tx(self, tx_hash):
         raw_res = await self.lcd_node.get_tx(tx_hash)
         return raw_res
@@ -83,20 +87,59 @@ class Oracle:
         return rates
 
     async def retrieve_chain_active_denoms(self):
-        raw_res = await self.lcd_node.get_oracle_active_denoms()
-        actives = raw_res["result"]
-        return actives
+        try:
+            raw_res = await self.lcd_node.get_oracle_active_denoms()
+            actives = raw_res["result"]
+            return actives
+        except HttpError:
+            return list()
 
     async def retrieve_prevotes(self, denom):
-        raw_res = await self.lcd_node.get_oracle_prevotes_validator(
-            denom=denom,
-            validator_addr=self.validator_addr,
-        )
-        prevotes = raw_res["result"]
-        return prevotes
+        try:
+            raw_res = await self.lcd_node.get_oracle_prevotes_validator(
+                denom=denom,
+                validator_addr=self.validator_addr,
+            )
+            prevotes = raw_res["result"]
+            return prevotes
+        except HttpError:
+            return list()
 
     async def sync_wallet(self):
         await self.wallet.sync_state()
+
+    async def query_feed(self, market_info):
+        try:
+            feed_px = await market_info["feed"]()
+            feed_weight = market_info["weight"]
+            return (feed_px * Decimal(feed_weight))
+        except HttpError:
+            return None
+
+    async def get_denom_px(self, markets):
+        task_feed = [
+            self.query_feed(market_info) for market_info in markets
+        ]
+        feed_weights = [market_info["weight"] for market_info in markets]
+        # Sum of all the weights assigned in the feed's markets
+        total_weight = reduce(
+            lambda acc, x: acc + x,
+            feed_weights,
+            Decimal("0.0"),
+        )
+        market_pxs = await asyncio.gather(*task_feed)
+        # If any market_pxs return None
+        # We abstain
+        failed_market_px = [mpx for mpx in market_pxs if mpx is None]
+        if len(failed_market_px) > 0:
+            return ABSTAIN_VOTE_PX
+        # Get the mean price of denom
+        market_px = reduce(
+            lambda acc, px: acc + (px / total_weight),
+            market_pxs,
+            Decimal("0.0"),
+        )
+        return market_px
 
     """
     Internal Logic
@@ -117,42 +160,16 @@ class Oracle:
             if prevote_cached is not None:
                 # Get Previous Hashed
                 hash_info = self.hash_map.get(denom, None)
-                if hash_info is None:
-                    return None
-                rate_salt, hashed = self.hash_map.get(denom)
+                if hash_info is not None:
+                    rate_salt, hashed = self.hash_map.get(denom)
 
-                self.vote_msg_builder.append_votemsg(
-                    exchange_rate=prevote_cached["px"],
-                    denom=denom,
-                    feeder=self.wallet.account_addr,
-                    validator=self.validator_addr,
-                    salt=prevote_cached["salt"],
-                )
-
-    async def query_feed(self, market_info):
-        feed_px = await market_info["feed"]()
-        feed_weight = market_info["weight"]
-        return (feed_px * Decimal(feed_weight))
-
-    async def get_denom_px(self, markets):
-        task_feed = [
-            self.query_feed(market_info) for market_info in markets
-        ]
-        feed_weights = [market_info["weight"] for market_info in markets]
-        # Sum of all the weights assigned in the feed's markets
-        total_weight = reduce(
-            lambda acc, x: acc + x,
-            feed_weights,
-            Decimal("0.0"),
-        )
-        market_pxs = await asyncio.gather(*task_feed)
-        # Get the mean price of denom
-        market_px = reduce(
-            lambda acc, px: acc + (px / total_weight),
-            market_pxs,
-            Decimal("0.0"),
-        )
-        return market_px
+                    self.vote_msg_builder.append_votemsg(
+                        exchange_rate=prevote_cached["px"],
+                        denom=denom,
+                        feeder=self.wallet.account_addr,
+                        validator=self.validator_addr,
+                        salt=prevote_cached["salt"],
+                    )
 
     def get_rate_salt(self):
         return token_hex(2)
@@ -389,6 +406,7 @@ Denom: {msg_val["denom"]} """)
 
         await asyncio.gather(*tx_queries)
         print(f"----------({height})---------")
+        await self.sync_wallet(),
         print(f"----------Votes ---------")
         self.print_tx_hist(self.hist_votes)
         print(f"\n----------PreVotes ---------")
@@ -408,8 +426,6 @@ Denom: {msg_val["denom"]} """)
     async def new_height(self, height):
         vote_period = self.period_getter(height)
         # Check for tx success / fail
-        print(f"New Height: {height}")
-        print("Check Tx Called...")
         await self.check_txs(height)
 
         # Vote Period Increased
@@ -421,10 +437,9 @@ Denom: {msg_val["denom"]} """)
         # Get Actives
         # Get Rates for All Markets on Chain
         # Update Wallet
-        active_rates, current_rates, _syncwallet = await asyncio.gather(
+        active_rates, current_rates = await asyncio.gather(
             self.retrieve_chain_active_denoms(),
             self.retrieve_chain_rates(),
-            self.sync_wallet(),
         )
         self.current_rates = current_rates
         # Filter and work on those we have implemented rates for
