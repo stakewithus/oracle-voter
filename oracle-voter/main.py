@@ -89,7 +89,7 @@ def main():
     )
     args = parser.parse_args()
     # Check that password is given
-    wallet_pass = os.environ["password"] or args.password
+    wallet_pass = os.environ.get("password", None) or args.password
     if wallet_pass is None:
         raise ValueError(f"Password not provided for feeder account")
 
