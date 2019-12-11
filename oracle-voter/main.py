@@ -10,7 +10,10 @@ from _version import __version__
 
 async def start_coro(args):
     n = LCDNode(addr=args["node"])
-    home_dir = args.get("wallet_dir", None) or os.path.expanduser("~/.terracli")
+    home_dir = args.get(
+        "wallet_dir",
+        None,
+    ) or os.path.expanduser("~/.terracli")
 
     account_addr = CLIWallet.get_addr(args["wallet_name"], home_dir)
 
@@ -19,10 +22,8 @@ async def start_coro(args):
         args["wallet_password"],
         account_addr,
         lcd_node=n,
-        gas_prices=args["gas_prices"],
         home_dir=home_dir,
     )
-    
     # Sync Wallet
     await w.sync_state()
 
@@ -33,6 +34,8 @@ async def start_coro(args):
         validator_addr=args["validator"],
         wallet=w,
         chain_id=args["chain_id"],
+        gas_fee=args["gas_fee"],
+        gas_denom=args["gas_denom"],
     )
     while True:
         await oracle.retrieve_height()
@@ -82,10 +85,16 @@ def main():
         default=None,
     )
     parser.add_argument(
-        "--gas-prices",
-        metavar="gas_prices",
-        help="Gas prices to determine the transaction fee",
-        default="0.1uluna"
+        "--gas-fee",
+        metavar="gas_fee",
+        help="Transaction fee amount to pay in gas denoms",
+        default="1000"
+    )
+    parser.add_argument(
+        "--gas-denom",
+        metavar="gas_denom",
+        help="Base denomination for gas transaction fee amount",
+        default="uluna"
     )
     parser.add_argument(
         "--version",
@@ -107,7 +116,8 @@ def main():
         "chain_id": args.chain_id,
         "wallet_dir": args.home,
         "vote_period": args.vote_period,
-        "gas_prices": args.gas_prices,
+        "gas_denom": args.gas_denom,
+        "gas_fee": args.gas_fee,
     }
 
     loop = asyncio.get_event_loop()

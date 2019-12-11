@@ -31,6 +31,8 @@ class Oracle:
         validator_addr=None,
         wallet=None,
         chain_id="soju-0012",
+        gas_fee="1000",
+        gas_denom="uluna",
     ):
         self.vote_period = vote_period
         self.lcd_node = lcd_node
@@ -38,6 +40,8 @@ class Oracle:
         self.chain_id = chain_id
         self.validator_addr = validator_addr
         self.wallet = wallet
+        self.gas_fee = gas_fee
+        self.gas_denom = gas_denom
 
         self.period_getter = partial(get_vote_period, self.vote_period)
 
@@ -457,6 +461,8 @@ Denom: {msg_val["denom"]} """)
             self.chain_id,
             self.wallet.account_num,
             self.wallet.account_seq,
+            gas_denom=self.gas_denom,
+            gas_fee=self.gas_fee,
         )
 
         append_vote_tasks = [
@@ -479,6 +485,8 @@ Denom: {msg_val["denom"]} """)
             self.chain_id,
             self.wallet.account_num,
             self.wallet.account_seq,
+            gas_denom=self.gas_denom,
+            gas_fee=self.gas_fee,
         )
         # Filter Out the base pair luna/ukrw
         # Get Luna UKRW First

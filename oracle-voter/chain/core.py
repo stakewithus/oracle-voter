@@ -12,13 +12,18 @@ class Transaction:
         account_number,
         sequence,
         memo="",
+        gas_denom="unluna",
+        gas_fee="1000",
     ):
         self.chain_id = chain_id
         self.account_number = account_number
         self.sequence = sequence
         self.memo = memo
         self.fee = {
-            "amount": list(),
+            "amount": [{
+                "denom": f"{gas_denom}",
+                "amount": f"{gas_fee}",
+            }],
             "gas": "200000",
         }
         self.msgs = list()

@@ -1,11 +1,12 @@
 import subprocess
 import os
 import simplejson as json
-from decimal import Decimal, Context
+from decimal import Decimal, Context, localcontext
 
 
-MICRO_VALUE = Decimal("10.0") ** 6
+MICRO_VALUE = Decimal("10.0000000") ** 6
 MICRO_UNIT = Decimal("10.0") ** -6
+MICRO_VAL = MICRO_VALUE.quantize(MICRO_UNIT, context=Context(prec=40))
 
 
 class CLIWallet:
@@ -19,7 +20,6 @@ class CLIWallet:
         password,
         account_addr,
         lcd_node={},
-        gas_prices="0.1uluna",
         home_dir=None,
     ):
         self.name = name
@@ -28,7 +28,6 @@ class CLIWallet:
         # Get the account address
         # self.get_addr()
         self.account_addr = account_addr
-        self.gas_prices = gas_prices
         # If no home directory is given, default to terracli default
         self.home_dir = home_dir or os.path.expanduser("~/.terracli")
         self.account_balance = Decimal("0.0")
@@ -61,19 +60,21 @@ class CLIWallet:
             denom = bal["denom"]
             amt = bal["amount"]
             if denom == "uluna":
-                raw_balance = Decimal(amt)
-
-        balance = Decimal(raw_balance / MICRO_VALUE).quantize(
-            MICRO_UNIT,
-            context=Context(prec=40),
-        )
+                raw_balance = Decimal(f"{amt}.000000")
+        balance = Decimal("0.000001")
+        with localcontext() as ctx:
+            ctx.prec = 10
+            balance = Decimal(raw_balance / MICRO_VAL).quantize(
+                Decimal("0.000001"),
+                context=Context(prec=20),
+            )
         if new_seq > self.account_seq:
             self.account_seq = new_seq
 
         self.account_balance = balance
         """ Print Summary """
         print(f"""Account: {self.name}
-Balance: {self.account_balance}
+Balance: {self.account_balance} LUNA
 Number: {self.account_num}
 Sequence: {self.account_seq}
 """)
@@ -108,8 +109,6 @@ Sequence: {self.account_seq}
                 f"{sequence}",
                 "--chain-id",
                 f"{chain_id}",
-                "--gas-prices",
-                f"{self.gas_prices}",
                 "--home",
                 f"{self.home_dir}",
                 "--output",
