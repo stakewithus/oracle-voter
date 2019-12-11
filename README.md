@@ -4,12 +4,18 @@
 
 ```
 """terra-oracle-voter
-usage: main.py [-h] [--from wallet_name] [--node node] [--chain-id chain_id]
+usage: main.py [-h] [--wallet wallet_name] [--node node] [--chain-id chain_id]
                [--vote-period vote_period] [--password password]
-               [--home home_dir] [--gas-prices gas_prices] [--version]
+               [--home home_dir] [--gas-fee gas_fee] [--gas-denom gas_denom]
+               [--version]
                validator
 """
 ```
+
+## Changlog v0.1.1
+- Added option to set `--gas-denom` and `--gas-fee` respectively.Transaction fee is paid in flat amount `{gas_fee}{gas_denom}` for example `100uluna`
+- Changed interface to use `argparser` instead
+- Password can be read from either `env` or `--password`
 
 ## Sample Output
 
