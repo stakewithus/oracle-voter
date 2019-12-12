@@ -31,6 +31,8 @@ class Oracle:
         validator_addr=None,
         wallet=None,
         chain_id="soju-0012",
+        gas_fee="1000",
+        gas_denom="uluna",
     ):
         self.vote_period = vote_period
         self.lcd_node = lcd_node
@@ -38,6 +40,8 @@ class Oracle:
         self.chain_id = chain_id
         self.validator_addr = validator_addr
         self.wallet = wallet
+        self.gas_fee = gas_fee
+        self.gas_denom = gas_denom
 
         self.period_getter = partial(get_vote_period, self.vote_period)
 
@@ -65,6 +69,10 @@ class Oracle:
     External Calls
     """
 
+    """
+    We should have predictable error returns or default value returns
+    if anoy of the below external call throws
+    """
     async def retrieve_tx(self, tx_hash):
         raw_res = await self.lcd_node.get_tx(tx_hash)
         return raw_res
@@ -83,56 +91,34 @@ class Oracle:
         return rates
 
     async def retrieve_chain_active_denoms(self):
-        raw_res = await self.lcd_node.get_oracle_active_denoms()
-        actives = raw_res["result"]
-        return actives
+        try:
+            raw_res = await self.lcd_node.get_oracle_active_denoms()
+            actives = raw_res["result"]
+            return actives
+        except HttpError:
+            return list()
 
     async def retrieve_prevotes(self, denom):
-        raw_res = await self.lcd_node.get_oracle_prevotes_validator(
-            denom=denom,
-            validator_addr=self.validator_addr,
-        )
-        prevotes = raw_res["result"]
-        return prevotes
+        try:
+            raw_res = await self.lcd_node.get_oracle_prevotes_validator(
+                denom=denom,
+                validator_addr=self.validator_addr,
+            )
+            prevotes = raw_res["result"]
+            return prevotes
+        except HttpError:
+            return list()
 
     async def sync_wallet(self):
         await self.wallet.sync_state()
 
-    """
-    Internal Logic
-    """
-
-    async def append_vote_msg(self, denom):
-        prevotes = await self.retrieve_prevotes(denom)
-        if len(prevotes) > 0:
-            prevote_data = prevotes[0]
-            # Attempt to get the prevote hash from current hashmap
-            prevote_cached = self.prior_prevotes.get(
-                prevote_data["hash"],
-                None,
-            )
-            # If prevote_cached is None
-            # We do not have information on this pre-vote
-            # Hence we cannot vote
-            if prevote_cached is not None:
-                # Get Previous Hashed
-                hash_info = self.hash_map.get(denom, None)
-                if hash_info is None:
-                    return None
-                rate_salt, hashed = self.hash_map.get(denom)
-
-                self.vote_msg_builder.append_votemsg(
-                    exchange_rate=prevote_cached["px"],
-                    denom=denom,
-                    feeder=self.wallet.account_addr,
-                    validator=self.validator_addr,
-                    salt=prevote_cached["salt"],
-                )
-
     async def query_feed(self, market_info):
-        feed_px = await market_info["feed"]()
-        feed_weight = market_info["weight"]
-        return (feed_px * Decimal(feed_weight))
+        try:
+            feed_px = await market_info["feed"]()
+            feed_weight = market_info["weight"]
+            return (feed_px * Decimal(feed_weight))
+        except HttpError:
+            return None
 
     async def get_denom_px(self, markets):
         task_feed = [
@@ -146,6 +132,11 @@ class Oracle:
             Decimal("0.0"),
         )
         market_pxs = await asyncio.gather(*task_feed)
+        # If any market_pxs return None
+        # We abstain
+        failed_market_px = [mpx for mpx in market_pxs if mpx is None]
+        if len(failed_market_px) > 0:
+            return ABSTAIN_VOTE_PX
         # Get the mean price of denom
         market_px = reduce(
             lambda acc, px: acc + (px / total_weight),
@@ -153,6 +144,44 @@ class Oracle:
             Decimal("0.0"),
         )
         return market_px
+
+    """
+    Internal Logic
+    """
+
+    async def append_vote_msg(self, denom):
+        prevotes = await self.retrieve_prevotes(denom)
+        print("---- PreVotes Seen ----")
+        print(json.dumps(prevotes, indent=2))
+        print("---- End PreVotes Seen ----")
+        if len(prevotes) > 0:
+            prevote_data = prevotes[0]
+            # Attempt to get the prevote hash from current hashmap
+            prevote_cached = self.prior_prevotes.get(
+                prevote_data["hash"],
+                None,
+            )
+            # If prevote_cached is None
+            # We do not have information on this pre-vote
+            # Hence we cannot vote
+            if prevote_cached is not None:
+                prevote_vp = prevote_cached["vp"]
+                print(f"PreVote VP: {prevote_vp} Current VP: {self.current_vote_period}")
+                # Get Previous Hashed
+                hash_info = self.hash_map.get(denom, None)
+                # Do not reveal vote if prior prevote voting period
+                # Is the same as the current voting period
+                if hash_info is not None and \
+                        self.current_vote_period > prevote_vp:
+                    rate_salt, hashed = self.hash_map.get(denom)
+
+                    self.vote_msg_builder.append_votemsg(
+                        exchange_rate=prevote_cached["px"],
+                        denom=denom,
+                        feeder=self.wallet.account_addr,
+                        validator=self.validator_addr,
+                        salt=prevote_cached["salt"],
+                    )
 
     def get_rate_salt(self):
         return token_hex(2)
@@ -237,6 +266,7 @@ class Oracle:
             self.prior_prevotes[hashed] = {
                 "px": market_px,
                 "salt": rate_salt,
+                "vp": int(self.current_vote_period)
             }
             self.prevote_msg_builder.append_prevotemsg(
                 hashed=hashed,
@@ -389,6 +419,7 @@ Denom: {msg_val["denom"]} """)
 
         await asyncio.gather(*tx_queries)
         print(f"----------({height})---------")
+        await self.sync_wallet(),
         print(f"----------Votes ---------")
         self.print_tx_hist(self.hist_votes)
         print(f"\n----------PreVotes ---------")
@@ -408,8 +439,6 @@ Denom: {msg_val["denom"]} """)
     async def new_height(self, height):
         vote_period = self.period_getter(height)
         # Check for tx success / fail
-        print(f"New Height: {height}")
-        print("Check Tx Called...")
         await self.check_txs(height)
 
         # Vote Period Increased
@@ -421,10 +450,9 @@ Denom: {msg_val["denom"]} """)
         # Get Actives
         # Get Rates for All Markets on Chain
         # Update Wallet
-        active_rates, current_rates, _syncwallet = await asyncio.gather(
+        active_rates, current_rates = await asyncio.gather(
             self.retrieve_chain_active_denoms(),
             self.retrieve_chain_rates(),
-            self.sync_wallet(),
         )
         self.current_rates = current_rates
         # Filter and work on those we have implemented rates for
@@ -442,6 +470,8 @@ Denom: {msg_val["denom"]} """)
             self.chain_id,
             self.wallet.account_num,
             self.wallet.account_seq,
+            gas_denom=self.gas_denom,
+            gas_fee=self.gas_fee,
         )
 
         append_vote_tasks = [
@@ -464,6 +494,8 @@ Denom: {msg_val["denom"]} """)
             self.chain_id,
             self.wallet.account_num,
             self.wallet.account_seq,
+            gas_denom=self.gas_denom,
+            gas_fee=self.gas_fee,
         )
         # Filter Out the base pair luna/ukrw
         # Get Luna UKRW First
