@@ -3,13 +3,42 @@
 ## Usage
 
 ```
-"""terra-oracle-voter
 usage: main.py [-h] [--wallet wallet_name] [--node node] [--chain-id chain_id]
                [--vote-period vote_period] [--password password]
                [--home home_dir] [--gas-fee gas_fee] [--gas-denom gas_denom]
                [--version]
                validator
-"""
+
+Run Terra Oracle Voter
+
+positional arguments:
+  validator             validator operator address (valoper)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --wallet wallet_name  Terra Feeder Wallet in terracli
+  --node node           Terra LCD Node
+  --chain-id chain_id   Tendermint Chain ID
+  --vote-period vote_period
+                        Terra Chain vote period length
+  --password password   Password to unlock feeder account
+  --home home_dir       Home Directory to pass to terracli
+  --gas-fee gas_fee     Transaction fee amount to pay in gas denoms
+  --gas-denom gas_denom
+                        Base denomination for gas transaction fee amount
+  --version, -v         show program's version number and exit
+```
+
+## Example Usage
+```
+python oracle-voter/main.py terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
+  --wallet feeder \
+  --node http://127.0.0.1:1317 \
+  --vote-period 5 \
+  --chain-id soju-0013 \
+  --gas-fee 1000 \
+  --gas-denom uluna \
+  --home /home/exampler_user/.terracli
 ```
 
 ## Changlog v0.1.1
@@ -88,6 +117,10 @@ source venv/bin/activate
    It is used for account management
 
 - Valid Account Name and Password stored in home folder for `terracli`
+
+## Setup
+
+Please see [SETUP.md](SETUP.md)
 
 
 ## Common Problems

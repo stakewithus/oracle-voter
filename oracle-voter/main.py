@@ -52,7 +52,7 @@ def main():
     parser.add_argument(
         "--wallet",
         metavar="wallet_name",
-        help="Terra Feeder Account",
+        help="Terra Feeder Wallet in terracli",
         default="feeder",
     )
     parser.add_argument(
