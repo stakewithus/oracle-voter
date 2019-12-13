@@ -105,15 +105,37 @@ pytest --cov=oracle-voter
 ## Install Dependencies
 
 - Requires Python 3.7 +
-```
-virtualenv -p python3 venv
-```
-- Pip Packages
 
-```
+### Ubuntu Installation
+
+```bash
+sudo apt-get install -y python3.7 python3.7-dev openssl libssl-dev libgmp-dev -y
+
+# Try to get the venv command to work
+python3.7 -m venv venv -p python3.7
+
+or 
+
+python3.7 -m virtualenv venv -p python3.7
+
+If above two dont work
+
+python3.7 -m pip install virtualenv
+
+Then try either two of those commands again
+
+# After that, activate virtualenv
 source venv/bin/activate
 (venv) pip install -r requirements.txt
+
+# Finally
+(venv) python setup.py install
+
+# Ta-da!
+(venv) oracle_voter
+
 ```
+
 
 ## Requirements
 - Validator Address
@@ -132,3 +154,12 @@ Please see [SETUP.md](SETUP.md)
 
 1. I Started the `oracle-voter`, nothing shows
 - Are you able to connect to the LCD Node?
+
+2. I cannot install `oracle_voter`
+
+If you are on Debian / Ubuntu: you need the following pre-requisite packages
+
+```bash
+# Install Python 3.7 and Python 3.7 Development Tools
+
+```
