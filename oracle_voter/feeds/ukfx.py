@@ -1,5 +1,5 @@
-from feeds.base import Base
-from common import client
+from oracle_voter.feeds.base import Base
+from oracle_voter.common import client
 
 
 class UKFX(Base):

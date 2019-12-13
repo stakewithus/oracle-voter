@@ -2,10 +2,10 @@ import argparse
 import asyncio
 import os
 
-from oracle.machine2 import Oracle
-from chain.core import LCDNode
-from wallet.cli import CLIWallet
-from _version import __version__
+from oracle_voter.oracle.machine2 import Oracle
+from oracle_voter.chain.core import LCDNode
+from oracle_voter.wallet.cli import CLIWallet
+from oracle_voter._version import __version__
 
 
 async def start_coro(args):

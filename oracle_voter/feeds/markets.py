@@ -1,8 +1,9 @@
 # Hardcode Supported Markets
 from decimal import Decimal, Context
-from markets import pricing
-from feeds import coinone, ukfx
 from functools import partial
+
+from oracle_voter.markets import pricing
+from oracle_voter.feeds import coinone, ukfx
 
 WEI_VALUE = Decimal("10.0") ** -18
 

@@ -5,8 +5,6 @@ aioresponses==0.6.1
 pytest==5.3.0
 coverage==4.5.4
 pytest-cov==2.8.1
-plyvel==1.1.0
 bitcoinlib==0.4.11
 bech32==1.1.0
 cryptography==2.8
-docopt==0.6.2

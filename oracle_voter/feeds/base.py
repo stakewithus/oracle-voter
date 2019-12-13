@@ -1,4 +1,4 @@
-from common import client
+from oracle_voter.common import client
 
 
 class Base:

@@ -1,7 +1,6 @@
-from feeds.base import Base
-from common import client
 from decimal import Decimal
-from functools import partial
+from oracle_voter.feeds.base import Base
+from oracle_voter.common import client
 
 
 class Coinone(Base):

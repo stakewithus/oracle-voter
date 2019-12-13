@@ -2,7 +2,6 @@
 
 # from chain.core import Transaction
 # from wallet.cli import CLIWallet
-from oracle.utils import get_vote_period
 from functools import partial, reduce
 from secrets import token_hex
 from cryptography.hazmat.primitives import hashes
@@ -13,9 +12,10 @@ import asyncio
 import simplejson as json
 from collections import deque, OrderedDict
 
-from feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX
-from chain.core import Transaction
-from common.client import HttpError
+from oracle_voter.oracle.utils import get_vote_period
+from oracle_voter.feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX
+from oracle_voter.chain.core import Transaction
+from oracle_voter.common.client import HttpError
 
 denom_supported_rates = [
     market_info["denom"] for market_info in supported_rates

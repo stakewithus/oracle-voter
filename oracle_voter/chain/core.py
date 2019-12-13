@@ -1,5 +1,5 @@
 from decimal import Decimal
-from common import client
+from oracle_voter.common import client
 
 EIGHTEEN_PLACES = Decimal(10) ** -18
 
