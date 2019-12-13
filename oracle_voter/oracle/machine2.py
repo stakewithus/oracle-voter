@@ -47,7 +47,7 @@ class Oracle:
 
         self.current_vote_period = 0
         self.current_height = 0
-        self.current_rates = []
+        self.current_rates = None
 
         self.prior_prevotes = dict()
 
@@ -238,14 +238,15 @@ class Oracle:
                         context=Context(prec=40),
                     )
             # If we are unable to get the latest exchange rates, abstain vote
-            if chain_rate == ABSTAIN_VOTE_PX:
-                market_px = ABSTAIN_VOTE_PX
-            else:
-                # Check that market_px is not more than x percent
-                # From last onchain price
-                px_pct_diff = Decimal(1 - (market_px / chain_rate)).copy_abs()
-                if (px_pct_diff > Decimal("0.02")):
+            if self.current_rates is not None:
+                if chain_rate == ABSTAIN_VOTE_PX:
                     market_px = ABSTAIN_VOTE_PX
+                else:
+                    # Check that market_px is not more than x percent
+                    # From last onchain price
+                    px_pct_diff = Decimal(1 - (market_px / chain_rate)).copy_abs()
+                    if (px_pct_diff > Decimal("0.02")):
+                        market_px = ABSTAIN_VOTE_PX
 
             if denom == "ukrw":
                 self.rate_luna_krw = market_px
@@ -454,7 +455,13 @@ Denom: {msg_val["denom"]} """)
             self.retrieve_chain_active_denoms(),
             self.retrieve_chain_rates(),
         )
-        self.current_rates = current_rates
+        # self.current_rates = current_rates
+        if len(active_rates) == 0:
+            print("--WARNING-- Terra Chain has no active rates--")
+            active_rates = ["ukrw", "uusd", "usdr", "umnt"]
+        if current_rates is None:
+            print("--WARNING-- Terra Chain has no current rates--")
+            self.current_rates = None
         # Filter and work on those we have implemented rates for
         calc_rates = [
             denom for denom in active_rates

@@ -18,8 +18,11 @@ async def http_get(url, params=dict()):
     try:
         #
         http_resp = await session.get(url, params=params, timeout=timeout)
+        # print(f"Fetching URL: {url}")
         status_code = http_resp.status
+        # print(status_code)
         raw_text = await http_resp.text()
+        # print(raw_text)
         if len(raw_text) > 0:
             result = json.loads(raw_text)
         if status_code != 200:
