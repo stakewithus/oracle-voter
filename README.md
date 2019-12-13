@@ -31,7 +31,9 @@ optional arguments:
 
 ## Example Usage
 ```
-python oracle-voter/main.py terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
+python setup.py install
+
+oracle_voter terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
   --wallet feeder \
   --node http://127.0.0.1:1317 \
   --vote-period 5 \
