@@ -1,4 +1,4 @@
-# oracle-voter alpha-v0.1.1
+# oracle-voter alpha-v0.1.2
 
 ## Usage
 
@@ -42,6 +42,9 @@ oracle_voter terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
   --gas-denom uluna \
   --home /home/exampler_user/.terracli
 ```
+
+## Changlog v0.1.1
+- Added hardcoded currencies if active_rates return []
 
 ## Changlog v0.1.1
 - Added option to set `--gas-denom` and `--gas-fee` respectively.Transaction fee is paid in flat amount `{gas_fee}{gas_denom}` for example `100uluna`
