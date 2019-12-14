@@ -306,14 +306,19 @@ class Oracle:
     async def sign_and_broadcast_prevotes(self):
         if len(self.prevote_msg_builder.msgs) > 0:
             #
+            print("Broadcasting PreVotes...")
             try:
                 signed_tx = self.prevote_msg_builder.sign(self.wallet)
+                signed_tx_str = json.dumps(signed_tx, indent=2)
+                print(f"Broadcasted \n {signed_tx_str}")
                 broadcast_prevote_res = await self.lcd_node.broadcast_tx_async(
                     json.dumps({
                         "tx": signed_tx["value"],
                         "mode": "sync",
                     })
                 )
+                print("Broadcast Result")
+                print(broadcast_prevote_res)
                 # TODO Validate that the PreVote Has Passed sync
                 # self.last_prevote_tx_hash = broadcast_prevote_res["txhash"]
                 query_height = self.current_height + 1
