@@ -43,7 +43,7 @@ oracle_voter terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
   --home /home/exampler_user/.terracli
 ```
 
-## Changlog v0.1.1
+## Changlog v0.1.2
 - Added hardcoded currencies if active_rates return []
 
 ## Changlog v0.1.1

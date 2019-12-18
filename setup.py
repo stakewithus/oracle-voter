@@ -2,7 +2,7 @@ from setuptools import setup, find_namespace_packages
 
 setup(
     name="oracle_voter",
-    version="0.1.1-alpha",
+    version="0.1.2-alpha",
     packages=find_namespace_packages(),
     py_modules=["oracle_voter"],
     entry_points={
