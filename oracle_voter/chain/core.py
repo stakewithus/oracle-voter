@@ -12,7 +12,7 @@ class Transaction:
         account_number,
         sequence,
         memo="",
-        gas_denom="unluna",
+        gas_denom="uluna",
         gas_fee="1000",
     ):
         self.chain_id = chain_id

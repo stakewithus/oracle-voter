@@ -22,7 +22,13 @@ def test_build_vote_tx(tx_builder, account_addrs, wei_value):
         "chain_id": "soju-0012",
         "account_number": "45",
         "sequence": "0",
-        "fee": {"amount": [], "gas": "200000"},
+        "fee": {
+            "amount": [{
+                "denom": "uluna",
+                "amount": "1000",
+            }],
+            "gas": "200000",
+        },
         "msgs": [{
             "type": r"oracle/MsgExchangeRateVote",
             "value": {
@@ -73,7 +79,13 @@ def test_fully_build_vote_tx(
                     "validator": f"{validator}",
                 },
             }],
-            "fee": {"amount": [], "gas": "200000"},
+            "fee": {
+                "amount": [{
+                    "denom": "uluna",
+                    "amount": "1000",
+                }],
+                "gas": "200000",
+            },
             "memo": "",
             "signatures": [],
         },
@@ -118,13 +130,19 @@ def test_sign_built_vote_tx(
                 },
             }],
             "memo": "",
-            "fee": {"amount": [], "gas": "200000"},
+            "fee": {
+                "amount": [{
+                    "denom": "uluna",
+                    "amount": "1000",
+                }],
+                "gas": "200000",
+            },
             "signatures": [{
                 "pub_key": {
                     "type": "tendermint/PubKeySecp256k1",
                     "value": "AsyXH0ftWQ29WxzgwpfV2WJ7glylgPnaOPdcAfPQ+Fyk"
                 },
-                "signature": "SfNv0+GCQTw48YPZLrFVeCp4mdF0G5SwL6M9Rqzp4IZQE8JKqulN8cEIplFGhGeEGodgaZxIseLRxC6OUScNPw=="
+                "signature": "ZOI24iYEoW4GmMCIaFvoCjSoBO1fZyuryaOwjaNavzYAjK9ebgs1PLkD6hhlZ7umIRCvLhNTZkspoEwKM1w/UQ=="
             }],
         },
     }
