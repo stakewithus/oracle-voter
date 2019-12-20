@@ -1,14 +1,15 @@
 import asyncio
 from unittest.mock import Mock
-from oracle.machine2 import (
+
+from oracle_voter.oracle.machine2 import (
     Oracle,
 )
 
 # from oracle.fixtures_machine import voting_e2e_3_periods
-from oracle.fixture_18549 import mock_height_18549
-from oracle.fixture_18550 import mock_height_18550
-from oracle.fixture_18555 import mock_height_18555
-from oracle.fixture_18559 import mock_height_18559
+from oracle_voter.oracle.fixture_18549 import mock_height_18549
+from oracle_voter.oracle.fixture_18550 import mock_height_18550
+from oracle_voter.oracle.fixture_18555 import mock_height_18555
+from oracle_voter.oracle.fixture_18559 import mock_height_18559
 
 
 async def main_voting_e2e_3_periods(

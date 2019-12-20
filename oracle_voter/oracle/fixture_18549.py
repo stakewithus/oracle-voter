@@ -1,7 +1,7 @@
 from functools import partial
 from unittest.mock import MagicMock
 
-from oracle.fixture_utils import (
+from oracle_voter.oracle.fixture_utils import (
     mock_account_info,
     mock_block_data,
     mock_active_denoms,

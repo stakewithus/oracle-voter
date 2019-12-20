@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 from unittest.mock import patch
-from common.fixtures_client import (
+from oracle_voter.common.fixtures_client import (
     SessionOk,
     Session404,
     SessionExceptClientConnection,
@@ -9,10 +9,10 @@ from common.fixtures_client import (
     SessionExceptJSONDecode,
 )
 
-from common.client import HttpError, http_get, http_post
+from oracle_voter.common.client import HttpError, http_get, http_post
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_200_OK(mock):
     url = "http://google.com"
     mock.ClientSession = SessionOk
@@ -22,7 +22,7 @@ def test_200_OK(mock):
     assert result == resp_body
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_404_NOTFOUND(mock):
     url = "http://google.com"
     mock.ClientSession = Session404
@@ -31,7 +31,7 @@ def test_404_NOTFOUND(mock):
         loop.run_until_complete(http_get(url))
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_except_client_connection(mock):
     url = "http://google.com"
     mock.ClientSession = SessionExceptClientConnection
@@ -40,7 +40,7 @@ def test_except_client_connection(mock):
         loop.run_until_complete(http_get(url))
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_except_server_timeout(mock):
     url = "http://google.com"
     mock.ClientSession = SessionExceptServerTimeout
@@ -49,7 +49,7 @@ def test_except_server_timeout(mock):
         loop.run_until_complete(http_get(url))
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_except_json_decode(mock):
     url = "http://google.com"
     mock.ClientSession = SessionExceptJSONDecode
@@ -58,7 +58,7 @@ def test_except_json_decode(mock):
     assert result is None
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_POST_404_NOTFOUND(mock):
     url = "http://google.com"
     mock.ClientSession = Session404
@@ -67,7 +67,7 @@ def test_POST_404_NOTFOUND(mock):
         loop.run_until_complete(http_post(url))
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_post_except_client_connection(mock):
     url = "http://google.com"
     mock.ClientSession = SessionExceptClientConnection
@@ -76,7 +76,7 @@ def test_post_except_client_connection(mock):
         loop.run_until_complete(http_post(url))
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_post_except_server_timeout(mock):
     url = "http://google.com"
     mock.ClientSession = SessionExceptServerTimeout
@@ -85,7 +85,7 @@ def test_post_except_server_timeout(mock):
         loop.run_until_complete(http_post(url))
 
 
-@patch("common.client.aiohttp")
+@patch("oracle_voter.common.client.aiohttp")
 def test_post_except_json_decode(mock):
     url = "http://google.com"
     mock.ClientSession = SessionExceptJSONDecode

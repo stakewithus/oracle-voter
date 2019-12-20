@@ -1,7 +1,7 @@
 from aioresponses import aioresponses
 import asyncio
 from urllib.parse import urlencode
-from feeds import fixtures_coinone
+from oracle_voter.feeds import fixtures_coinone
 from decimal import Decimal
 
 

@@ -1,4 +1,4 @@
-from markets import fixtures_pricing
+from oracle_voter.markets import fixtures_pricing
 from decimal import Decimal
 
 
