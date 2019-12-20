@@ -1,5 +1,5 @@
 import pytest
-from feeds import coinone
+from oracle_voter.feeds import coinone
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 import pytest
-
-from chain.core import Transaction
-from wallet.cli import CLIWallet
 from decimal import Decimal
+
+from oracle_voter.chain.core import Transaction
+from oracle_voter.wallet.cli import CLIWallet
 
 
 @pytest.fixture

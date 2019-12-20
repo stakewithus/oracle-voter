@@ -1,7 +1,8 @@
 from aioresponses import aioresponses
 import pytest
-from chain.core import LCDNode
-from wallet.cli import CLIWallet
+
+from oracle_voter.chain.core import LCDNode
+from oracle_voter.wallet.cli import CLIWallet
 
 
 @pytest.fixture

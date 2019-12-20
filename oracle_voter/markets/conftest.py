@@ -1,5 +1,5 @@
 import pytest
-from markets import pricing
+from oracle_voter. markets import pricing
 
 
 @pytest.fixture
