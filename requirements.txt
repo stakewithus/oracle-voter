@@ -8,4 +8,3 @@ pytest-cov==2.8.1
 bitcoinlib==0.4.11
 bech32==1.1.0
 cryptography==2.8
-python-dotenv==0.10.3

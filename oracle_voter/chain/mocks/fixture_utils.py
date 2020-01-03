@@ -1,17 +1,12 @@
+from unittest.mock import MagicMock
 from urllib.parse import urlencode
-from functools import partial
-from aioresponses import CallbackResult
-import simplejson as json
-
 
 def mock_account_info(
-  m,
-  node_addr,
-  feeder_addr,
-  public_key,
-  account_num,
-  height,
-  account_seq,
+    feeder_addr,
+    public_key,
+    account_num,
+    height,
+    account_seq,
 ):
     template = {
         "height": f"{height}",
@@ -32,13 +27,10 @@ def mock_account_info(
             }
         }
     }
-    url = f"{node_addr}/auth/accounts/{feeder_addr}"
-    m.get(url, status=200, payload=template)
+    return template
 
 
 def mock_block_data(
-    m,
-    node_addr,
     height,
     current_hash,
     prev_hash,
@@ -70,13 +62,10 @@ def mock_block_data(
             },
         },
     }
-    url = f"{node_addr}/blocks/latest"
-    m.get(url, status=200, payload=template)
+    return template
 
 
 def mock_active_denoms(
-    m,
-    node_addr,
     height,
 ):
     payload = {
@@ -87,13 +76,10 @@ def mock_active_denoms(
             "uusd",
         ],
     }
-    url = f"{node_addr}/oracle/denoms/actives"
-    m.get(url, status=200, payload=payload)
+    return payload
 
 
 def mock_onchain_rates(
-    m,
-    node_addr,
     height,
     ukrw="",
     umnt="",
@@ -106,23 +92,20 @@ def mock_onchain_rates(
             "denom": "ukrw",
             "amount": f"{ukrw}"
         }, {
-          "denom": "umnt",
-          "amount": f"{umnt}"
+            "denom": "umnt",
+            "amount": f"{umnt}"
         }, {
-          "denom": "usdr",
-          "amount": f"{usdr}"
+            "denom": "usdr",
+            "amount": f"{usdr}"
         }, {
-          "denom": "uusd",
-          "amount": f"{uusd}"
+            "denom": "uusd",
+            "amount": f"{uusd}"
         }],
     }
-    url = f"{node_addr}/oracle/denoms/exchange_rates"
-    m.get(url, status=200, payload=payload)
+    return payload
 
 
 def mock_chain_prevotes(
-    m,
-    node_addr,
     validator_addr,
     height,
     denom,
@@ -142,8 +125,56 @@ def mock_chain_prevotes(
         "height": f"{height}",
         "result": payload_result,
     }
-    url = f"{node_addr}/oracle/denoms/{denom}/prevotes/{validator_addr}"
-    m.get(url, status=200, payload=payload)
+    return payload
+
+
+def mock_broadcast_tx(txhash):
+    return {
+        "height": "0",
+        "txhash": f"{txhash}",
+        "logs": [{
+            "msg_index": 0,
+            "success": True,
+            "log": "",
+        }, {
+            "msg_index": 1,
+            "success": True,
+            "log": "",
+        }, {
+            "msg_index": 2,
+            "success": True,
+            "log": "",
+        }, {
+            "msg_index": 3,
+            "success": True,
+            "log": "",
+        }],
+    }
+
+
+def mock_query_tx(height, txhash):
+    logs = [{
+        "msg_index": 0,
+        "success": True,
+        "log": "",
+    }, {
+        "msg_index": 1,
+        "success": True,
+        "log": "",
+    }, {
+        "msg_index": 2,
+        "success": True,
+        "log": "",
+    }, {
+        "msg_index": 3,
+        "success": True,
+        "log": "",
+    }]
+    return {
+        "height": f"{height}",
+        "txhash": f"{txhash}",
+        "logs": logs,
+    }
 
 
 def mock_feed_coinone_orderbook(
@@ -177,50 +208,3 @@ def mock_feed_ukfx_px(
     url_params = urlencode({"t": 1})
     url = f"{feed_url}/pairs/krw/{currency}/livehistory/chart?{url_params}"
     m.get(url, status=200, payload=payload)
-
-
-def mock_broadcast_tx(
-    m,
-    node_addr,
-    txhash,
-    post_data=dict(),
-    logs=list(),
-):
-
-    def process_post_req(txhash, post_data, logs, *args, **kwargs):
-        raw_post_data = kwargs["data"]
-        recv_post_data = json.loads(raw_post_data)
-        # print("RECV")
-        # print(recv_post_data)
-        # print("POST")
-        # print(post_data)
-        assert recv_post_data == post_data
-        payload = {
-            "height": "0",
-            "txhash": f"{txhash}",
-            "logs": logs,
-        }
-        return CallbackResult(
-            status=200,
-            payload=payload,
-        )
-    processor = partial(process_post_req, txhash, post_data, logs)
-    url = f"{node_addr}/txs"
-    m.post(url, callback=processor)
-
-
-def mock_query_tx(
-    m,
-    node_addr,
-    height,
-    txhash,
-    logs=list(),
-):
-    payload = {
-        "height": f"{height}",
-        "txhash": f"{txhash}",
-        "logs": logs,
-    }
-
-    url = f"{node_addr}/txs/{txhash}"
-    m.get(url, payload=payload)

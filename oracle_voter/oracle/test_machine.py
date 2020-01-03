@@ -1,38 +1,43 @@
 import asyncio
-from unittest.mock import Mock
+from asyncio import Future
+from unittest.mock import Mock, patch, MagicMock
+from oracle_voter.chain.core import LCDNode
+from oracle_voter.wallet.cli import CLIWallet
+from oracle_voter.config.test_settings import get_settings
 
 from oracle_voter.oracle.machine2 import (
     Oracle,
 )
 
-# from oracle.fixtures_machine import voting_e2e_3_periods
-from oracle_voter.oracle.fixture_18549 import mock_height_18549
-from oracle_voter.oracle.fixture_18550 import mock_height_18550
-from oracle_voter.oracle.fixture_18555 import mock_height_18555
-from oracle_voter.oracle.fixture_18559 import mock_height_18559
+from oracle_voter.chain.mocks.fixture_18549 import mock_height_18549
+from oracle_voter.chain.mocks.fixture_18550 import mock_height_18550
+from oracle_voter.chain.mocks.fixture_18555 import mock_height_18555
+from oracle_voter.chain.mocks.fixture_18559 import mock_height_18559
 
-
+test_settings = get_settings()
 async def main_voting_e2e_3_periods(
     http_mock,
-    node_addr,
+    LCDNodeMock,
     feed_coinone_url,
     feed_ukfx_url,
-    cli_accounts,
-    feeder_wallet,
     vote_period,
-    lcd_node,
 ):
-    mock_height_18549(
+    cli_accounts = (test_settings.get('validator_addr'), test_settings.get('feeder_addr'))
+    lcd_node = mock_height_18549(
         http_mock,
-        node_addr,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        feeder_wallet,
+        LCDNodeMock
     )
-    # Fetch Initial State
+    feeder_wallet = CLIWallet(
+        test_settings.get('feeder_account'),
+        test_settings.get('feeder_pw'),
+        cli_accounts[1],
+        lcd_node,
+    )
+    #Fetch Initial State
     await feeder_wallet.sync_state()
-
     # Init the Start Machine
     oracle = Oracle(
         vote_period=vote_period,
@@ -54,13 +59,18 @@ async def main_voting_e2e_3_periods(
     #
     # Mock Height 18550
     #
-    mock_height_18550(
+    lcd_node_188550 = mock_height_18550(
         http_mock,
-        node_addr,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        feeder_wallet,
+        LCDNodeMock,
+    )
+    oracle_188550 = Oracle(
+        vote_period=vote_period,
+        lcd_node=lcd_node_188550,
+        validator_addr=cli_accounts[0],
+        wallet=feeder_wallet,
     )
     # Mock the Salts
     salt_mock = Mock()
@@ -70,18 +80,23 @@ async def main_voting_e2e_3_periods(
         "1e47",
         "d534",
     ]
-    oracle.get_rate_salt = salt_mock
-    await oracle.retrieve_height()
+    oracle_188550.get_rate_salt = salt_mock
+    await oracle_188550.retrieve_height()
     #
     # Mock Height 18555
     #
-    mock_height_18555(
+    lcd_node_188555 = mock_height_18555(
         http_mock,
-        node_addr,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        feeder_wallet,
+        LCDNodeMock,
+    )
+    oracle_188555 = Oracle(
+        vote_period=vote_period,
+        lcd_node=lcd_node_188555,
+        validator_addr=cli_accounts[0],
+        wallet=feeder_wallet,
     )
     # Mock the Salts
     salt_mock = Mock()
@@ -91,32 +106,34 @@ async def main_voting_e2e_3_periods(
         "4721",
         "0c26",
     ]
-    oracle.get_rate_salt = salt_mock
-    await oracle.retrieve_height()
+    oracle_188555.get_rate_salt = salt_mock
+    await oracle_188555.retrieve_height()
     #
     # Mock Height 18559
     #
-    mock_height_18559(
+    oracle_18559 = mock_height_18559(
         http_mock,
-        node_addr,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        feeder_wallet,
+        LCDNodeMock,
     )
-    await oracle.retrieve_height()
+    oracle_188555 = Oracle(
+        vote_period=vote_period,
+        lcd_node=oracle_18559,
+        validator_addr=cli_accounts[0],
+        wallet=feeder_wallet,
+    )
+    await oracle_188555.retrieve_height()
 
 
+@patch('oracle_voter.chain.core.LCDNode', autospec=True)
 def test_voting_e2e_3_periods(
+    LCDNodeMock,
     http_mock,
-    node_addr,
-    lcd_node,
-    cli_accounts,
     feed_coinone_url,
     feed_ukfx_url,
-    feeder_wallet,
 ):
-
     # Mock all required endpoints
     """
     voting_e2e_3_periods(
@@ -133,11 +150,8 @@ def test_voting_e2e_3_periods(
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_voting_e2e_3_periods(
         http_mock,
-        node_addr,
+        LCDNodeMock,
         feed_coinone_url,
         feed_ukfx_url,
-        cli_accounts,
-        feeder_wallet,
         5,  # Vote Period
-        lcd_node,
     ))

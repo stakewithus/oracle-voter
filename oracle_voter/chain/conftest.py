@@ -3,37 +3,29 @@ from decimal import Decimal
 
 from oracle_voter.chain.core import Transaction
 from oracle_voter.wallet.cli import CLIWallet
-
+from oracle_voter.config.test_settings import get_settings
 import os
 from os.path import join, dirname
-from dotenv import load_dotenv
-load_dotenv()
 
-a = os.environ.get('FEEDER_ADDRESS')
+test_settings = get_settings()
 @pytest.fixture
 def account_addrs():
     return (
-        os.environ.get('FEEDER_ADDRESS'),
-        os.environ.get('VALIDATOR_ADDRESS'))
-    # return (
-    #     "terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm",  # Feeder
-    #     "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu",  # Validator
-    # )
+        test_settings.get('oracle_addr'),  # Feeder
+    )
 
 
 @pytest.fixture
 def sign_data():
-    return (os.environ.get('PUBLIC_KEY'), os.environ.get('SIGNATURE'))
-    #return ("AsyXH0ftWQ29WxzgwpfV2WJ7glylgPnaOPdcAfPQ+Fyk", "ZOI24iYEoW4GmMCIaFvoCjSoBO1fZyuryaOwjaNavzYAjK9ebgs1PLkD6hhlZ7umIRCvLhNTZkspoEwKM1w/UQ==")
+    return (test_settings.get('chain_test_public_key'), test_settings.get('chain_test_signature'))
 
 
 @pytest.fixture
 def feeder_wallet(account_addrs):
     feeder_addr = account_addrs[0]
     w = CLIWallet(
-        'oracle',
-        os.environ.get('ACCOUNT_PASSWORD'),
-        #'12345678',
+        test_settings.get('oracle_account'),
+        test_settings.get('oracle_pw'),
         feeder_addr,
     )
     return w
