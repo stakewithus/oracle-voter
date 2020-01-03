@@ -163,10 +163,3 @@ If you are on Debian / Ubuntu: you need the following pre-requisite packages
 # Install Python 3.7 and Python 3.7 Development Tools
 
 ```
-
-## Environment Variables
-FEEDER_ADDRESS=
-VALIDATOR_ADDRESS=
-ACCOUNT_PASSWORD=
-PUBLIC_KEY=
-SIGNATURE=
