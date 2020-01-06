@@ -12,6 +12,7 @@ test_settings = get_settings()
 def account_addrs():
     return (
         test_settings.get('oracle_addr'),  # Feeder
+        test_settings.get('validator_addr'),
     )
 
 
