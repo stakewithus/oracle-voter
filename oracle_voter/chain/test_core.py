@@ -99,8 +99,10 @@ def test_sign_built_vote_tx(
     feeder_wallet,
     account_addrs,
     wei_value,
+    sign_data
 ):
     feeder, validator = account_addrs
+    pub_key, signature = sign_data
 
     txb = tx_builder("soju-0012", 45, 0)
     txb.append_votemsg(
@@ -140,9 +142,9 @@ def test_sign_built_vote_tx(
             "signatures": [{
                 "pub_key": {
                     "type": "tendermint/PubKeySecp256k1",
-                    "value": "AsyXH0ftWQ29WxzgwpfV2WJ7glylgPnaOPdcAfPQ+Fyk"
+                    "value": pub_key
                 },
-                "signature": "ZOI24iYEoW4GmMCIaFvoCjSoBO1fZyuryaOwjaNavzYAjK9ebgs1PLkD6hhlZ7umIRCvLhNTZkspoEwKM1w/UQ=="
+                "signature": signature
             }],
         },
     }

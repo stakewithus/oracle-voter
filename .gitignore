@@ -3,5 +3,6 @@ venv/
 *.swo
 *.swn
 __pycache__
-
+.coverage
 *.log
+.env
