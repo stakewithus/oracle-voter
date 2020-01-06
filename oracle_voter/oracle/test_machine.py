@@ -28,12 +28,13 @@ async def main_voting_e2e_3_periods(
     vote_period,
 ):
     cli_accounts = (test_settings.get('validator_addr'), test_settings.get('feeder_addr'))
-    lcd_node = mock_height_18549(
+    lcd_node = LCDNodeMock.return_value
+    mock_height_18549(
         http_mock,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        LCDNodeMock
+        lcd_node
     )
     feeder_wallet = CLIWallet(
         test_settings.get('feeder_account'),
@@ -65,18 +66,12 @@ async def main_voting_e2e_3_periods(
     #
     # Mock Height 18550
     #
-    lcd_node_188550 = mock_height_18550(
+    mock_height_18550(
         http_mock,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        LCDNodeMock,
-    )
-    oracle_188550 = Oracle(
-        vote_period=vote_period,
-        lcd_node=lcd_node_188550,
-        validator_addr=cli_accounts[0],
-        wallet=feeder_wallet,
+        lcd_node,
     )
     # Mock the Salts
     salt_mock = Mock()
@@ -86,9 +81,10 @@ async def main_voting_e2e_3_periods(
         "1e47",
         "d534",
     ]
-    oracle_188550.get_rate_salt = salt_mock
+    oracle.get_rate_salt = salt_mock
     offline_sign_18550(feeder_wallet)
-    await oracle_188550.retrieve_height()
+    await oracle.retrieve_height()
+    return
     #
     # Mock Height 18555
     #

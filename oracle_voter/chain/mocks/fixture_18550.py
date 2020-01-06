@@ -1,5 +1,6 @@
 #pylint: disable-msg=too-many-arguments
 from unittest.mock import MagicMock
+from oracle_voter.common.client import HttpError
 
 from oracle_voter.chain.mocks.fixture_utils import (
     mock_account_info,
@@ -90,19 +91,19 @@ async def broadcast_tx(txhash):
     return mock_broadcast_tx(txhash)
 
 
-async def query_tx(txhash):
-    return mock_query_tx(height, txhash)
+async def query_tx():
+    raise HttpError('Connection error', '400', '')
+
 
 def mock_height_18550(
     http_mock,
     feed_coinone_url="",
     feed_ukfx_url="",
     cli_accounts=list(),
-    LCDNodeMock=object
+    lcd_node=object
 ):
     validator_addr, feeder_addr = cli_accounts
     mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
-    lcd_node = LCDNodeMock.return_value
     lcd_node.get_account.side_effect = [
         account_info(feeder_addr)]
     lcd_node.get_latest_block.return_value = block_data()
@@ -116,4 +117,5 @@ def mock_height_18550(
     ]
     txhash = '097817AABE904AAE1BD628487E1011FC4EF53ECD74A2D767893E5623943D1265'
     lcd_node.broadcast_tx_async.return_value = broadcast_tx(txhash)
+    lcd_node.get_tx.return_value = query_tx()
     return lcd_node

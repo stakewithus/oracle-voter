@@ -96,11 +96,10 @@ def mock_height_18549(
     feed_coinone_url="",
     feed_ukfx_url="",
     cli_accounts=list(),
-    LCDNodeMock=object
+    lcd_node=object
 ):
     validator_addr, feeder_addr = cli_accounts
     mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
-    lcd_node = LCDNodeMock.return_value
     lcd_node.get_account.side_effect = [account_info(feeder_addr), account_info(feeder_addr)]
     lcd_node.get_latest_block.return_value = block_data()
     lcd_node.get_oracle_active_denoms.return_value = active_denoms()
