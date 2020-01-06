@@ -13,6 +13,11 @@ from oracle_voter.chain.mocks.fixture_18549 import mock_height_18549
 from oracle_voter.chain.mocks.fixture_18550 import mock_height_18550
 from oracle_voter.chain.mocks.fixture_18555 import mock_height_18555
 from oracle_voter.chain.mocks.fixture_18559 import mock_height_18559
+from oracle_voter.chain.mocks.fixture_terracli import (
+    offline_sign_18549,
+    offline_sign_18550,
+    offline_sign_18555,
+)
 
 test_settings = get_settings()
 async def main_voting_e2e_3_periods(
@@ -36,6 +41,7 @@ async def main_voting_e2e_3_periods(
         cli_accounts[1],
         lcd_node,
     )
+    offline_sign_18549(feeder_wallet)
     #Fetch Initial State
     await feeder_wallet.sync_state()
     # Init the Start Machine
@@ -81,6 +87,7 @@ async def main_voting_e2e_3_periods(
         "d534",
     ]
     oracle_188550.get_rate_salt = salt_mock
+    offline_sign_18550(feeder_wallet)
     await oracle_188550.retrieve_height()
     #
     # Mock Height 18555
@@ -107,6 +114,7 @@ async def main_voting_e2e_3_periods(
         "0c26",
     ]
     oracle_188555.get_rate_salt = salt_mock
+    offline_sign_18555(feeder_wallet)
     await oracle_188555.retrieve_height()
     #
     # Mock Height 18559
