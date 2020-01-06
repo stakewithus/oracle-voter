@@ -11,7 +11,7 @@ from oracle_voter.chain.mocks.fixture_utils import (
     mock_query_tx,
 )
 from oracle_voter.chain.mocks.fixture_market import mock_init
-height = 18555
+height = 18559
 
 
 async def account_info(feeder_addr):
@@ -89,7 +89,7 @@ async def broadcast_tx(txhash):
     return mock_broadcast_tx(txhash)
 
 
-async def query_tx(txhash):
+async def query_tx(height, txhash):
     return mock_query_tx(height, txhash)
 
 
@@ -98,22 +98,16 @@ def mock_height_18559(
     feed_coinone_url="",
     feed_ukfx_url="",
     cli_accounts=list(),
-    LCDNodeMock=object
+    lcd_node=object
 ):
     validator_addr, feeder_addr = cli_accounts
     mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
-    lcd_node = LCDNodeMock.return_value
     lcd_node.get_account.side_effect = [account_info(feeder_addr)]
     lcd_node.get_latest_block.return_value = block_data()
-    lcd_node.get_oracle_active_denoms.return_value = active_denoms()
-    lcd_node.get_oracle_rates.return_value = onchain_rates()
-    lcd_node.get_oracle_prevotes_validator.side_effect = [
-        chain_prevotes(validator_addr, 1),
-        chain_prevotes(validator_addr, 2),
-        chain_prevotes(validator_addr, 3),
-        chain_prevotes(validator_addr, 4)
+    lcd_node.get_tx.side_effect = [
+        query_tx(
+            18557, '4F140DBFA66D4B4B1824FE4CA2DAC77F91DD7EDB86042277F696453C37F67175'),
+        query_tx(
+            18557, 'DC9067B9291CF080CADB244B424AD7C2C05D852D49FEE65F172D3E5EFF6971EA')
     ]
-    lcd_node.broadcast_tx_async.return_value = broadcast_tx(
-        '4F140DBFA66D4B4B1824FE4CA2DAC77F91DD7EDB86042277F696453C37F67175')
-
     return lcd_node
