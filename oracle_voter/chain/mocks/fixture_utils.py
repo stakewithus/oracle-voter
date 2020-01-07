@@ -1,5 +1,12 @@
+import asyncio
 from unittest.mock import MagicMock
 from urllib.parse import urlencode
+
+
+def async_stubber(res):
+    f = asyncio.Future()
+    f.set_result(res)
+    return f
 
 def mock_account_info(
     feeder_addr,

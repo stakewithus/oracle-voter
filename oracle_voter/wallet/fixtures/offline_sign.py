@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock, Mock
 
+
 def offline_sign_18549(feeder_wallet):
     signed_prevote_tx = {
         "type": "core/StdTx",
@@ -218,4 +219,3 @@ def offline_sign_18555(feeder_wallet):
         signed_vote_tx,
         signed_prevote_tx,
     ]
-
