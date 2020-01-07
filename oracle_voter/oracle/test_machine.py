@@ -5,6 +5,9 @@ from oracle_voter.chain.core import LCDNode
 from oracle_voter.chain.fixtures_core import (
     get_latest_block as stub_get_latest_block,
 )
+from oracle_voter.wallet.fixtures import (
+    sync_state as stub_sync_state,
+)
 from oracle_voter.wallet.cli import CLIWallet
 from oracle_voter.config.test_settings import get_settings
 
@@ -56,6 +59,8 @@ async def main_voting_e2e_3_periods(
         validator_addr=cli_accounts[0],
         wallet=CLIWalletMock,
     )
+    # sync_state
+    CLIWalletMock.sync_state.return_value = stub_sync_state(blk, CLIWalletMock)
     await oracle.retrieve_height()
     
 
@@ -72,8 +77,8 @@ def test_voting_e2e_3_periods(
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_voting_e2e_3_periods(
         http_mock,
-        LCDNodeMock,
-        CLIWalletMock,
+        LCDNodeMock, # Instance of LCDNode
+        CLIWalletMock, # Instance of CLIWallet
         feed_coinone_url,
         feed_ukfx_url,
         5,  # Vote Period
