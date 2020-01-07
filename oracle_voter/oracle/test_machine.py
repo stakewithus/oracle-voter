@@ -84,15 +84,22 @@ async def main_voting_e2e_3_periods(
     oracle.get_rate_salt = salt_mock
     offline_sign_18550(feeder_wallet)
     await oracle.retrieve_height()
+    return
     #
     # Mock Height 18555
     #
-    mock_height_18555(
+    lcd_node_188555 = mock_height_18555(
         http_mock,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        lcd_node,
+        LCDNodeMock,
+    )
+    oracle_188555 = Oracle(
+        vote_period=vote_period,
+        lcd_node=lcd_node_188555,
+        validator_addr=cli_accounts[0],
+        wallet=feeder_wallet,
     )
     # Mock the Salts
     salt_mock = Mock()
@@ -102,20 +109,26 @@ async def main_voting_e2e_3_periods(
         "4721",
         "0c26",
     ]
-    oracle.get_rate_salt = salt_mock
+    oracle_188555.get_rate_salt = salt_mock
     offline_sign_18555(feeder_wallet)
-    await oracle.retrieve_height()
+    await oracle_188555.retrieve_height()
     #
     # Mock Height 18559
     #
-    mock_height_18559(
+    oracle_18559 = mock_height_18559(
         http_mock,
         feed_coinone_url,
         feed_ukfx_url,
         cli_accounts,
-        lcd_node,
+        LCDNodeMock,
     )
-    await oracle.retrieve_height()
+    oracle_188555 = Oracle(
+        vote_period=vote_period,
+        lcd_node=oracle_18559,
+        validator_addr=cli_accounts[0],
+        wallet=feeder_wallet,
+    )
+    await oracle_188555.retrieve_height()
 
 
 @patch('oracle_voter.chain.core.LCDNode', autospec=True)
