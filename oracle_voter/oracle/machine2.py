@@ -117,7 +117,9 @@ class Oracle:
             feed_px = await market_info["feed"]()
             feed_weight = market_info["weight"]
             return (feed_px * Decimal(feed_weight))
-        except ExchangeErr:
+        except ExchangeErr as err:
+            print(err)
+            print(err.exchange_err)
             return None
         except HttpError:
             return None

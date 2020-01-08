@@ -1,7 +1,7 @@
 import aiohttp
 import simplejson as json
 from simplejson.errors import JSONDecodeError
-from aiohttp.client_exceptions import ClientConnectionError, ServerTimeoutError
+from aiohttp.client_exceptions import ClientConnectionError, ServerTimeoutError, ClientConnectorError
 
 
 class HttpError(Exception):
@@ -45,6 +45,10 @@ async def http_get(url, params=dict()):
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Unable to connect")
 
+    except ClientConnectorError:
+        await session.close()
+        raise HttpError(f"Url: {url}", 404, "Unable to connect")
+
 
 async def http_post(url, params=dict(), post_data=dict()):
     result = {}
@@ -74,5 +78,9 @@ async def http_post(url, params=dict(), post_data=dict()):
         raise HttpError(f"Url: {url}", 404, "Server Timed Out")
 
     except ClientConnectionError:
+        await session.close()
+        raise HttpError(f"Url: {url}", 404, "Unable to connect")
+
+    except ClientConnectorError:
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Unable to connect")
