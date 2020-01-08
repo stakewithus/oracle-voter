@@ -13,7 +13,7 @@ def mock_init(
 ):
     mock_feed_ukfx_px(http_mock, feed_ukfx_url, "mnt", [[1575541429000, 2.2575782374764977]])
     mock_feed_ukfx_px(http_mock, feed_ukfx_url, "usd", [[1575541429000, 0.0008393768466290626]])
-    mock_feed_ukfx_px(http_mock, feed_ukfx_url, "xdr", [[1575541429000, 0.0008393768466290626]])
+    mock_feed_ukfx_px(http_mock, feed_ukfx_url, "xdr", [[1575541429000, 0.0006094236838571045]])
     mock_feed_coinone_orderbook(http_mock, feed_coinone_url, "LUNA", [
         {"price": "301.0", "qty": "1902.6306"},
         {"price": "302.0", "qty": "1861.4027"},

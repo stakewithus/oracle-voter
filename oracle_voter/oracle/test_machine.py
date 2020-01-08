@@ -2,20 +2,19 @@ import asyncio
 from asyncio import Future
 from unittest.mock import Mock, patch, MagicMock
 from oracle_voter.chain.core import LCDNode
-from oracle_voter.chain.fixtures_core import (
-    get_latest_block as stub_get_latest_block,
-)
-from oracle_voter.wallet.fixtures import (
-    sync_state as stub_sync_state,
-)
+from oracle_voter.chain.fixtures_core import stub_lcd_node
+from oracle_voter.wallet.fixtures_cli import stub_wallet
 from oracle_voter.wallet.cli import CLIWallet
 from oracle_voter.config.test_settings import get_settings
+from oracle_voter.oracle.fixtures_machine import stub_oracle
 
 from oracle_voter.oracle.machine2 import (
     Oracle,
 )
+from oracle_voter.chain.mocks.fixture_market import mock_init
 
 test_settings = get_settings()
+
 async def main_voting_e2e_3_periods(
     http_mock,
     LCDNodeMock,
@@ -50,17 +49,45 @@ async def main_voting_e2e_3_periods(
     | Block 18549 |
     ---------------
     """
-    blk = 18549
-    # get_latest_block
-    LCDNodeMock.get_latest_block.return_value = stub_get_latest_block(blk)
+    mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
+    stub_lcd_node(18549, LCDNodeMock, cli_accounts)
+    stub_wallet(18549, CLIWalletMock)
     oracle = Oracle(
         vote_period=vote_period,
         lcd_node=LCDNodeMock,
         validator_addr=cli_accounts[0],
         wallet=CLIWalletMock,
     )
-    # sync_state
-    CLIWalletMock.sync_state.return_value = stub_sync_state(blk, CLIWalletMock)
+    stub_oracle(18549, oracle)
+    await oracle.retrieve_height()
+    """
+    ---------------
+    | Block 18550 |
+    ---------------
+    """
+    stub_lcd_node(18550, LCDNodeMock, cli_accounts)
+    stub_wallet(18550, CLIWalletMock)
+    stub_oracle(18550, oracle)
+    mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
+    await oracle.retrieve_height()
+    
+    """
+    ---------------
+    | Block 18555 |
+    ---------------
+    """
+    stub_lcd_node(18555, LCDNodeMock, cli_accounts)
+    stub_wallet(18555, CLIWalletMock)
+    stub_oracle(18555, oracle)
+    mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
+    await oracle.retrieve_height()
+
+    """
+    ---------------
+    | Block 18559 |
+    ---------------
+    """
+    stub_lcd_node(18559, LCDNodeMock, cli_accounts)
     await oracle.retrieve_height()
     
 
