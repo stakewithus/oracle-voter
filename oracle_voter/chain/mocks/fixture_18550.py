@@ -13,7 +13,6 @@ from oracle_voter.chain.mocks.fixture_utils import (
     mock_query_tx,
     mock_query_tx
 )
-from oracle_voter.chain.mocks.fixture_market import mock_init
 height = 18550
 
 
