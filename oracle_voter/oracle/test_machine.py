@@ -11,10 +11,56 @@ from oracle_voter.oracle.fixtures_machine import stub_oracle
 from oracle_voter.oracle.machine2 import (
     Oracle,
 )
+from oracle_voter.chain.mocks.fixture_utils import async_stubber
 from oracle_voter.chain.mocks.fixture_market import mock_init
-
+from decimal import Decimal
+from functools import partial
 test_settings = get_settings()
 
+
+def get_coinone():
+    return async_stubber(Decimal(str(300.396)))
+
+
+def get_rate(target):
+    if target == "mnt":
+        return async_stubber(Decimal("2.25758"))
+    if target == "usd":
+        return async_stubber(Decimal("0.000839377"))
+    if target == "xdr":
+        return async_stubber(Decimal("0.000609424"))
+
+
+mocks = [{
+    "denom": "ukrw",
+    "pair_type": "native",
+    "markets": [{
+        "exchange": "coinone",
+        "feed": get_coinone,
+        "weight": 100,
+    }],
+}, {
+    "denom": "umnt",
+    "pair_type": "derivative",
+    "markets": [{
+        "feed": partial(get_rate, "mnt"),
+        "weight": 100,
+    }],
+}, {
+    "denom": "uusd",
+    "pair_type": "derivative",
+    "markets": [{
+        "feed": partial(get_rate, "usd"),
+        "weight": 100,
+    }],
+}, {
+    "denom": "usdr",
+    "pair_type": "derivative",
+    "markets": [{
+        "feed": partial(get_rate, "xdr"),
+        "weight": 100,
+    }],
+}]
 async def main_voting_e2e_3_periods(
     http_mock,
     LCDNodeMock,
@@ -49,7 +95,7 @@ async def main_voting_e2e_3_periods(
     | Block 18549 |
     ---------------
     """
-    mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
+    # mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
     stub_lcd_node(18549, LCDNodeMock, cli_accounts)
     stub_wallet(18549, CLIWalletMock)
     oracle = Oracle(
@@ -68,9 +114,9 @@ async def main_voting_e2e_3_periods(
     stub_lcd_node(18550, LCDNodeMock, cli_accounts)
     stub_wallet(18550, CLIWalletMock)
     stub_oracle(18550, oracle)
-    mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
+    # mock_init(http_mock, feed_coinone_url, feed_ukfx_url)
     await oracle.retrieve_height()
-    
+    return
     """
     ---------------
     | Block 18555 |
@@ -91,6 +137,7 @@ async def main_voting_e2e_3_periods(
     await oracle.retrieve_height()
     
 
+@patch('oracle_voter.oracle.machine2.supported_rates', mocks)
 @patch('oracle_voter.chain.core.LCDNode', autospec=True)
 @patch('oracle_voter.wallet.cli.CLIWallet', autospec=True)
 def test_voting_e2e_3_periods(
