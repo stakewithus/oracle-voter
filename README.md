@@ -1,4 +1,4 @@
-# oracle-voter alpha-v0.1.2
+# oracle-voter alpha-v0.1.3
 
 ## Usage
 
@@ -42,6 +42,10 @@ oracle_voter terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
   --gas-denom uluna \
   --home /home/exampler_user/.terracli
 ```
+
+## Changlog v0.1.3
+- Applied hotfix for bug where if the Coinone Exchange Error Code is not None, it raised an Exception from a string instead
+of proper Exception object.
 
 ## Changlog v0.1.2
 - Added hardcoded currencies if active_rates return []
