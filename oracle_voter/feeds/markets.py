@@ -28,7 +28,6 @@ async def fetch_coinone_krw():
     err, orderbook = await exchange_coinone.get_orderbook(currency)
     # Get MicroPrice
     if err is not None:
-        print(err)
         raise ExchangeErr(f"Exchange Coinone threw error", err)
     microprice = pricing.calc_microprice(orderbook)
     return microprice.quantize(WEI_VALUE, context=Context(prec=40))
