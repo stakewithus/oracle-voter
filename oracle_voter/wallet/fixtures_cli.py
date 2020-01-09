@@ -29,7 +29,7 @@ ok_sync_state = {
         "account_sequence": 79,
         "balance": Decimal("100.000000"),
     },
-    "18555": {
+    "18559": {
         "account_num": 52,
         "account_sequence": 81,
         "balance": Decimal("100.000000"),
