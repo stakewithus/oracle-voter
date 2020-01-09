@@ -13,7 +13,7 @@ import simplejson as json
 from collections import deque, OrderedDict
 
 from oracle_voter.oracle.utils import get_vote_period
-from oracle_voter.feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX
+from oracle_voter.feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX, ExchangeErr
 from oracle_voter.chain.core import Transaction
 from oracle_voter.common.client import HttpError
 
@@ -118,6 +118,10 @@ class Oracle:
             feed_px = await market_info["feed"]()
             feed_weight = market_info["weight"]
             return (feed_px * Decimal(feed_weight))
+        except ExchangeErr as err:
+            print(err)
+            print(err.exchange_err)
+            return None
         except HttpError:
             return None
 

@@ -17,13 +17,18 @@ exchange_coinone = coinone.Coinone("https://api.coinone.co.kr")
 
 feed_ukfx = ukfx.UKFX("https://api.ukfx.co.uk")
 
+class ExchangeErr(Exception):
+    def __init__(self, message, err):
+        super().__init__(message)
+        self.exchange_err = err
+
 
 async def fetch_coinone_krw():
     currency = "LUNA"
     err, orderbook = await exchange_coinone.get_orderbook(currency)
     # Get MicroPrice
     if err is not None:
-        raise err
+        raise ExchangeErr(f"Exchange Coinone threw error", err)
     microprice = pricing.calc_microprice(orderbook)
     return microprice.quantize(WEI_VALUE, context=Context(prec=40))
 
