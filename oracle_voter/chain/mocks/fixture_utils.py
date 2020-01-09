@@ -8,6 +8,11 @@ def async_stubber(res):
     f.set_result(res)
     return f
 
+def async_raiser(err):
+    f = asyncio.Future()
+    f.set_exception(err)
+    return f
+
 def mock_account_info(
     feeder_addr,
     public_key,
@@ -158,7 +163,6 @@ def mock_broadcast_tx(txhash):
         }],
     }
 
-
 def mock_query_tx(height, txhash):
     logs = [{
         "msg_index": 0,
@@ -184,6 +188,28 @@ def mock_query_tx(height, txhash):
     }
 
 
+def mock_query_tx_error(height, txhash):
+    return {
+        "height": f"{height}",
+        "txhash": f"{txhash}",
+        "logs": [{
+            "msg_index": 0,
+            "success": False,
+            "log": "",
+        }, {
+            "msg_index": 1,
+            "success": False,
+            "log": "",
+        }, {
+            "msg_index": 2,
+            "success": False,
+            "log": "",
+        }, {
+            "msg_index": 3,
+            "success": False,
+            "log": "",
+        }],
+    }
 def mock_feed_coinone_orderbook(
     m,
     feed_url,

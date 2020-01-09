@@ -23,6 +23,7 @@ COPY setup.py .
 
 RUN python setup.py install
 
+
 FROM golang:1.13-alpine AS build-env
 
 # Set up dependencies

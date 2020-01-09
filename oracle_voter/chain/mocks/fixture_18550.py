@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from oracle_voter.common.client import HttpError
 
 from oracle_voter.chain.mocks.fixture_utils import (
+    async_raiser,
     async_stubber,
     mock_account_info,
     mock_block_data,
@@ -13,7 +14,6 @@ from oracle_voter.chain.mocks.fixture_utils import (
     mock_query_tx,
     mock_query_tx
 )
-from oracle_voter.chain.mocks.fixture_market import mock_init
 height = 18550
 
 
@@ -92,8 +92,8 @@ def broadcast_tx(txhash):
     return async_stubber(mock_broadcast_tx(txhash))
 
 
-async def query_tx():
-    raise HttpError('Connection error', '400', '')
+def query_tx():
+    return async_raiser(HttpError('Connection error', '400', ''))
 
 
 def mock_height_18550(

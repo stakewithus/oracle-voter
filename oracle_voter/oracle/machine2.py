@@ -13,7 +13,7 @@ import simplejson as json
 from collections import deque, OrderedDict
 
 from oracle_voter.oracle.utils import get_vote_period
-from oracle_voter.feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX
+from oracle_voter.feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX, ExchangeErr
 from oracle_voter.chain.core import Transaction
 from oracle_voter.common.client import HttpError
 
@@ -87,9 +87,12 @@ class Oracle:
             await self.new_height(int(current_height))
 
     async def retrieve_chain_rates(self):
-        raw_res = await self.lcd_node.get_oracle_rates()
-        rates = raw_res["result"]
-        return rates
+        try:
+            raw_res = await self.lcd_node.get_oracle_rates()
+            rates = raw_res["result"]
+            return rates
+        except HttpError:
+            return None
 
     async def retrieve_chain_active_denoms(self):
         try:
@@ -118,6 +121,10 @@ class Oracle:
             feed_px = await market_info["feed"]()
             feed_weight = market_info["weight"]
             return (feed_px * Decimal(feed_weight))
+        except ExchangeErr as err:
+            print(err)
+            print(err.exchange_err)
+            return None
         except HttpError:
             return None
 
