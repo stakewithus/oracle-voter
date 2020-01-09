@@ -87,9 +87,12 @@ class Oracle:
             await self.new_height(int(current_height))
 
     async def retrieve_chain_rates(self):
-        raw_res = await self.lcd_node.get_oracle_rates()
-        rates = raw_res["result"]
-        return rates
+        try:
+            raw_res = await self.lcd_node.get_oracle_rates()
+            rates = raw_res["result"]
+            return rates
+        except HttpError:
+            return None
 
     async def retrieve_chain_active_denoms(self):
         try:
