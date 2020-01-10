@@ -1,7 +1,7 @@
 from decimal import Decimal
 from oracle_voter.feeds.base import Base
 from oracle_voter.common import client
-
+from oracle_voter.common.client import HttpError
 
 class Coinone(Base):
 
@@ -56,5 +56,8 @@ class Coinone(Base):
     async def get_orderbook(self, currency):
         get_params = {"currency": currency, "format": "json"}
         target_url = f"{self.api_url}/orderbook/"
-        http_res = await client.http_get(target_url, params=get_params)
-        return self.postpro_orders(http_res)
+        try:
+            http_res = await client.http_get(target_url, params=get_params)
+            return self.postpro_orders(http_res)
+        except HttpError as err:
+            return err, None

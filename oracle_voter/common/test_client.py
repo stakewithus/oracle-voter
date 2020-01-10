@@ -5,6 +5,7 @@ from oracle_voter.common.fixtures_client import (
     SessionOk,
     Session404,
     SessionExceptClientConnection,
+    SessionExceptClientConnector,
     SessionExceptServerTimeout,
     SessionExceptJSONDecode,
 )
@@ -92,3 +93,21 @@ def test_post_except_json_decode(mock):
     loop = asyncio.get_event_loop()
     result = loop.run_until_complete(http_post(url))
     assert result is None
+
+
+@patch("oracle_voter.common.client.aiohttp")
+def test_get_except_connector_error(mock):
+    url = "http://google.com"
+    mock.ClientSession = SessionExceptClientConnector
+    loop = asyncio.get_event_loop()
+    with pytest.raises(HttpError):
+        loop.run_until_complete(http_get(url))
+
+@patch("oracle_voter.common.client.aiohttp")
+def test_post_except_connector_error(mock):
+    url = "http://google.com"
+    mock.ClientSession = SessionExceptClientConnector
+    loop = asyncio.get_event_loop()
+    with pytest.raises(HttpError):
+        loop.run_until_complete(http_post(url))
+

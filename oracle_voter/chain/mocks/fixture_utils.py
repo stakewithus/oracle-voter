@@ -2,17 +2,6 @@ import asyncio
 from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
-
-def async_stubber(res):
-    f = asyncio.Future()
-    f.set_result(res)
-    return f
-
-def async_raiser(err):
-    f = asyncio.Future()
-    f.set_exception(err)
-    return f
-
 def mock_account_info(
     feeder_addr,
     public_key,
@@ -210,34 +199,3 @@ def mock_query_tx_error(height, txhash):
             "log": "",
         }],
     }
-def mock_feed_coinone_orderbook(
-    m,
-    feed_url,
-    currency,
-    asks=dict(),
-    bids=dict(),
-):
-    payload = {
-        "errorCode": "0",
-        "currency": " luna",
-        "result": "success",
-        "ask": asks,
-        "bid": bids,
-        "timestamp": "1575003770",
-    }
-
-    url_params = urlencode({"currency": currency, "format": "json"})
-    url = f"{feed_url}/orderbook/?{url_params}"
-    m.get(url, status=200, payload=payload)
-
-
-def mock_feed_ukfx_px(
-    m,
-    feed_url,
-    currency,
-    payload
-):
-
-    url_params = urlencode({"t": 1})
-    url = f"{feed_url}/pairs/krw/{currency}/livehistory/chart?{url_params}"
-    m.get(url, status=200, payload=payload)

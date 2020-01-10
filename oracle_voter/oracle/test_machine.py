@@ -10,11 +10,8 @@ from oracle_voter.config.test_settings import get_settings
 from oracle_voter.oracle.fixtures_machine import stub_oracle
 from oracle_voter.oracle.machine2 import Oracle
 from oracle_voter.feeds.markets import ExchangeErr
-from oracle_voter.chain.mocks.fixture_utils import (
-    async_raiser,
-    mock_query_tx_error,
-    async_stubber
-)
+from oracle_voter.common.util import async_stubber, async_raiser
+from oracle_voter.chain.mocks.fixture_utils import mock_query_tx_error
 from oracle_voter.common.client import HttpError
 from oracle_voter.oracle.fixtures_machine import (
     stub_feed_mocks_success,

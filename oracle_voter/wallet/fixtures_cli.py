@@ -2,16 +2,12 @@ import asyncio
 
 from decimal import Decimal
 from unittest.mock import PropertyMock
+from oracle_voter.common.util import async_stubber
 from oracle_voter.wallet.fixtures.offline_sign import (
     offline_sign_18549,
     offline_sign_18550,
     offline_sign_18555
 )
-
-def async_stubber(res):
-    f = asyncio.Future()
-    f.set_result(res)
-    return f
 
 ok_sync_state = {
     "18549": {
@@ -57,3 +53,36 @@ def stub_wallet(height, CLIWalletMock):
     CLIWalletMock.sync_state.return_value = sync_state(height, CLIWalletMock)
     offline_sign(height, CLIWalletMock)
     return CLIWalletMock;
+
+
+def signed_message(feeder, validator, pub_key, signature):
+    return {
+        "type": "core/StdTx",
+        "value": {
+            "msg": [{
+                "type": "oracle/MsgExchangeRateVote",
+                "value": {
+                    "exchange_rate": "8000.000000000000000000",
+                    "salt": "1234",
+                    "denom": "ukrw",
+                    "feeder": f"{feeder}",
+                    "validator": f"{validator}",
+                },
+            }],
+            "memo": "",
+            "fee": {
+                "amount": [{
+                    "denom": "uluna",
+                    "amount": "1000",
+                }],
+                "gas": "200000",
+            },
+            "signatures": [{
+                "pub_key": {
+                    "type": "tendermint/PubKeySecp256k1",
+                    "value": pub_key
+                },
+                "signature": signature
+            }],
+        },
+    }

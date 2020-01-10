@@ -3,6 +3,12 @@ import asyncio
 from urllib.parse import urlencode
 from oracle_voter.feeds import fixtures_coinone
 from decimal import Decimal
+from unittest.mock import Mock, patch
+from oracle_voter.common.util import (
+    async_stubber,
+    async_raiser,
+    not_found
+)
 
 
 def test_get_trades_200(exchange_coinone_url, exchange_coinone):
@@ -76,3 +82,24 @@ def test_get_orderbook_200(exchange_coinone_url, exchange_coinone):
             (Decimal('261.0'), Decimal('2179.129')),
         ]
         assert result["bids"][0:3] == top_bids
+
+
+@patch('oracle_voter.common.client.http_get')
+def test_get_orderbook_exception(http_mock, exchange_coinone):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    error, result = loop.run_until_complete(
+        exchange_coinone.get_orderbook("LUNA")
+    )
+    assert error is not None
+    assert result is None
+    
+
+@patch('oracle_voter.common.client.http_get')
+def test_get_orderbook_error(http_mock, exchange_coinone):
+    http_mock.return_value = async_stubber({"errorCode": 400})
+    loop = asyncio.get_event_loop()
+    error, _ = loop.run_until_complete(
+        exchange_coinone.get_orderbook("LUNA")
+    )
+    assert error is 400

@@ -1,5 +1,5 @@
 from decimal import Decimal, Context
-
+from oracle_voter.wallet.fixtures_cli import signed_message
 
 def test_build_vote_tx(tx_builder, account_addrs, wei_value):
     feeder, validator = account_addrs
@@ -118,35 +118,6 @@ def test_sign_built_vote_tx(
 
     result = txb.sign(feeder_wallet)
 
-    expected = {
-        "type": "core/StdTx",
-        "value": {
-            "msg": [{
-                "type": "oracle/MsgExchangeRateVote",
-                "value": {
-                    "exchange_rate": "8000.000000000000000000",
-                    "salt": "1234",
-                    "denom": "ukrw",
-                    "feeder": f"{feeder}",
-                    "validator": f"{validator}",
-                },
-            }],
-            "memo": "",
-            "fee": {
-                "amount": [{
-                    "denom": "uluna",
-                    "amount": "1000",
-                }],
-                "gas": "200000",
-            },
-            "signatures": [{
-                "pub_key": {
-                    "type": "tendermint/PubKeySecp256k1",
-                    "value": pub_key
-                },
-                "signature": signature
-            }],
-        },
-    }
+    expected = signed_message(feeder, validator, pub_key, signature)
 
     assert result == expected
