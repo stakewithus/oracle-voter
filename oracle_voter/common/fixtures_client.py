@@ -1,4 +1,4 @@
-from aiohttp.client_exceptions import ClientConnectionError, ServerTimeoutError
+from aiohttp.client_exceptions import ClientConnectionError, ServerTimeoutError, ClientConnectorError
 
 
 class DummySession:
@@ -55,6 +55,14 @@ class SessionExceptClientConnection(DummySession):
     async def post(self, *args, **kwargs):
         raise ClientConnectionError()
 
+
+class SessionExceptClientConnector(DummySession):
+
+    async def get(self, *args, **kwargs):
+        raise ClientConnectorError(1, OSError)
+
+    async def post(self, *args, **kwargs):
+        raise ClientConnectorError(1, OSError)
 
 class SessionExceptServerTimeout(DummySession):
 

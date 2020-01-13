@@ -1,8 +1,7 @@
 #pylint: disable-msg=too-many-arguments
 from unittest.mock import MagicMock
-
+from oracle_voter.common.util import async_stubber
 from oracle_voter.chain.mocks.fixture_utils import (
-    async_stubber,
     mock_account_info,
     mock_block_data,
     mock_active_denoms,

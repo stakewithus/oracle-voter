@@ -1,6 +1,6 @@
 from unittest.mock import Mock, MagicMock
 from decimal import Decimal, Context, getcontext
-from oracle_voter.chain.mocks.fixture_utils import async_stubber, async_raiser
+from oracle_voter.common.util import async_stubber, async_raiser
 from oracle_voter.feeds.markets import ExchangeErr
 from functools import partial
 from oracle_voter.common.client import HttpError

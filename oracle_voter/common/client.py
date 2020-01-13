@@ -41,11 +41,11 @@ async def http_get(url, params=dict()):
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Server Timed Out")
 
-    except ClientConnectionError:
+    except ClientConnectorError:
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Unable to connect")
 
-    except ClientConnectorError:
+    except ClientConnectionError:
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Unable to connect")
 
@@ -77,10 +77,11 @@ async def http_post(url, params=dict(), post_data=dict()):
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Server Timed Out")
 
-    except ClientConnectionError:
-        await session.close()
-        raise HttpError(f"Url: {url}", 404, "Unable to connect")
-
     except ClientConnectorError:
         await session.close()
         raise HttpError(f"Url: {url}", 404, "Unable to connect")
+
+    except ClientConnectionError:
+        await session.close()
+        raise HttpError(f"Url: {url}", 404, "Unable to connect")
+    

@@ -463,13 +463,14 @@ Denom: {msg_val["denom"]} """)
             self.retrieve_chain_active_denoms(),
             self.retrieve_chain_rates(),
         )
-        # self.current_rates = current_rates
         if len(active_rates) == 0:
             print("--WARNING-- Terra Chain has no active rates--")
             active_rates = ["ukrw", "uusd", "usdr", "umnt"]
         if current_rates is None:
             print("--WARNING-- Terra Chain has no current rates--")
             self.current_rates = None
+        else:
+            self.current_rates = current_rates
         # Filter and work on those we have implemented rates for
         calc_rates = [
             denom for denom in active_rates

@@ -1,7 +1,7 @@
 import pytest
 from decimal import Decimal
 
-from oracle_voter.chain.core import Transaction
+from oracle_voter.chain.core import Transaction, LCDNode
 from oracle_voter.wallet.cli import CLIWallet
 from oracle_voter.config.test_settings import get_settings
 import os
@@ -41,3 +41,7 @@ def tx_builder():
 def wei_value():
     EIGHTEEN_PLACES = Decimal(10) ** -18
     return EIGHTEEN_PLACES
+
+@pytest.fixture
+def lcd_node():
+    return LCDNode()

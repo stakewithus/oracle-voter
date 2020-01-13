@@ -1,15 +1,13 @@
 #pylint: disable-msg=too-many-arguments
 from unittest.mock import MagicMock
-
+from oracle_voter.common.util import async_stubber
 from oracle_voter.chain.mocks.fixture_utils import (
-    async_stubber,
     mock_account_info,
     mock_block_data,
     mock_active_denoms,
     mock_onchain_rates,
     mock_chain_prevotes,
     mock_broadcast_tx,
-    mock_query_tx,
 )
 
 height = 18549
@@ -88,9 +86,6 @@ def chain_prevotes(validator_addr, call_number):
 def broadcast_tx(txhash):
     return async_stubber(mock_broadcast_tx(txhash))
 
-
-def query_tx(txhash):
-    return async_stubber(mock_query_tx(height, txhash))
 
 def mock_height_18549(
     LCDNodeMock,
