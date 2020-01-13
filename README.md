@@ -1,4 +1,4 @@
-# oracle-voter alpha-v0.1.3
+# oracle-voter 0.1.4-alpha
 
 ## Usage
 
@@ -43,14 +43,17 @@ oracle_voter terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
   --home /home/exampler_user/.terracli
 ```
 
-## Changlog v0.1.3
+## Changelog 0.1.4
+- Improved overall test coverage for critical components: feeds, oracle machine, wallet
+
+## Changlog 0.1.3
 - Applied hotfix for bug where if the Coinone Exchange Error Code is not None, it raised an Exception from a string instead
 of proper Exception object.
 
-## Changlog v0.1.2
+## Changlog 0.1.2
 - Added hardcoded currencies if active_rates return []
 
-## Changlog v0.1.1
+## Changlog 0.1.1
 - Added option to set `--gas-denom` and `--gas-fee` respectively.Transaction fee is paid in flat amount `{gas_fee}{gas_denom}` for example `100uluna`
 - Changed interface to use `argparser` instead
 - Password can be read from either `env` or `--password`
