@@ -79,6 +79,8 @@ class Oracle:
 
     async def retrieve_height(self):
         raw_res = await self.lcd_node.get_latest_block()
+        if raw_res is None:
+            return
         block_meta = raw_res["block_meta"]
         current_height = int(block_meta["header"]["height"])
         if current_height > self.current_height:
@@ -86,9 +88,12 @@ class Oracle:
             await self.new_height(int(current_height))
 
     async def retrieve_chain_rates(self):
-        raw_res = await self.lcd_node.get_oracle_rates()
-        rates = raw_res["result"]
-        return rates
+        try:
+            raw_res = await self.lcd_node.get_oracle_rates()
+            rates = raw_res["result"]
+            return rates
+        except HttpError:
+            return None
 
     async def retrieve_chain_active_denoms(self):
         try:
@@ -459,13 +464,14 @@ Denom: {msg_val["denom"]} """)
             self.retrieve_chain_active_denoms(),
             self.retrieve_chain_rates(),
         )
-        # self.current_rates = current_rates
         if len(active_rates) == 0:
             print("--WARNING-- Terra Chain has no active rates--")
             active_rates = ["ukrw", "uusd", "usdr", "umnt"]
         if current_rates is None:
             print("--WARNING-- Terra Chain has no current rates--")
             self.current_rates = None
+        else:
+            self.current_rates = current_rates
         # Filter and work on those we have implemented rates for
         calc_rates = [
             denom for denom in active_rates

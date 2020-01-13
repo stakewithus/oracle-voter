@@ -48,6 +48,7 @@ class CLIWallet:
 
     async def sync_state(self):
         account_raw = await self.lcd_node.get_account(self.account_addr)
+        # Set Account Num
         self.account_num = account_raw["result"]["value"]["account_number"]
         if int(self.account_num) <= 0:
             raise ValueError(
@@ -68,9 +69,11 @@ class CLIWallet:
                 Decimal("0.000001"),
                 context=Context(prec=20),
             )
+
+        # Set Account Seq
         if new_seq > self.account_seq:
             self.account_seq = new_seq
-
+        # Set Balance
         self.account_balance = balance
         """ Print Summary """
         print(f"""Account: {self.name}
