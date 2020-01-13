@@ -2,6 +2,7 @@ from oracle_voter import _version
 import asyncio
 import pytest
 from unittest.mock import Mock, patch
+from oracle_voter.common.client import HttpError
 from oracle_voter.common.util import (
     async_stubber,
     async_raiser,
@@ -11,21 +12,32 @@ from oracle_voter.common.util import (
 
 @patch('oracle_voter.common.client.http_get')
 def test_get_tx(http_mock, lcd_node):
-    http_mock.return_value = async_stubber("")
+    http_mock.return_value = async_stubber("get_tx")
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(
+    result = loop.run_until_complete(
         lcd_node.get_tx(
             "36F6ABBE0A686D4DAC5F557EE562B421D7C47AB6DE77B986AA6D925E41645AFA")
     )
     http_mock.assert_called_once_with(
         "http://127.0.0.1:1317/txs/36F6ABBE0A686D4DAC5F557EE562B421D7C47AB6DE77B986AA6D925E41645AFA", params={})
+    assert result == "get_tx"
 
+
+@patch('oracle_voter.common.client.http_get')
+def test_get_tx_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_tx(
+            "36F6ABBE0A686D4DAC5F557EE562B421D7C47AB6DE77B986AA6D925E41645AFA")
+    )
+    assert result is None
 
 @patch('oracle_voter.common.client.http_post')
 def test_broadcast_tx_async(http_mock, lcd_node):
-    http_mock.return_value = async_stubber("")
+    http_mock.return_value = async_stubber("broadcast_tx_async")
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(
+    result = loop.run_until_complete(
         lcd_node.broadcast_tx_async(
             "36F6ABBE0A686D4DAC5F557EE562B421D7C47AB6DE77B986AA6D925E41645AFA")
     )
@@ -34,7 +46,18 @@ def test_broadcast_tx_async(http_mock, lcd_node):
         params={},
         post_data='36F6ABBE0A686D4DAC5F557EE562B421D7C47AB6DE77B986AA6D925E41645AFA'
     )
+    assert result == "broadcast_tx_async"
 
+
+@patch('oracle_voter.common.client.http_post')
+def test_broadcast_tx_async_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.broadcast_tx_async(
+            "36F6ABBE0A686D4DAC5F557EE562B421D7C47AB6DE77B986AA6D925E41645AFA")
+    )
+    assert result is None
 
 @patch('oracle_voter.common.client.http_get')
 def test_get_latest_block(http_mock, lcd_node):
@@ -45,6 +68,16 @@ def test_get_latest_block(http_mock, lcd_node):
     )
     http_mock.assert_called_once_with(
         "http://127.0.0.1:1317/blocks/latest", params={})
+
+
+@patch('oracle_voter.common.client.http_get')
+def test_get_latest_block_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_latest_block()
+    )
+    assert result is None
 
 
 @patch('oracle_voter.common.client.http_get')
@@ -59,6 +92,16 @@ def test_get_account(http_mock, lcd_node):
 
 
 @patch('oracle_voter.common.client.http_get')
+def test_get_account_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_account("terra1tngw4yusyas9ujlcmxdn7xkx6az07hej72rssm")
+    )
+    assert result is None
+
+
+@patch('oracle_voter.common.client.http_get')
 def test_get_oracle_rates(http_mock, lcd_node):
     http_mock.return_value = async_stubber("")
     loop = asyncio.get_event_loop()
@@ -70,6 +113,16 @@ def test_get_oracle_rates(http_mock, lcd_node):
 
 
 @patch('oracle_voter.common.client.http_get')
+def test_get_oracle_rates_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_oracle_rates()
+    )
+    assert result is None
+
+
+@patch('oracle_voter.common.client.http_get')
 def test_get_oracle_active_denoms(http_mock, lcd_node):
     http_mock.return_value = async_stubber("")
     loop = asyncio.get_event_loop()
@@ -78,6 +131,16 @@ def test_get_oracle_active_denoms(http_mock, lcd_node):
     )
     http_mock.assert_called_once_with(
         "http://127.0.0.1:1317/oracle/denoms/actives", params={})
+
+
+@patch('oracle_voter.common.client.http_get')
+def test_get_oracle_active_denoms_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_oracle_active_denoms()
+    )
+    assert result is None
 
 
 @patch('oracle_voter.common.client.http_get')
@@ -93,6 +156,17 @@ def test_get_oracle_prevotes_validator(http_mock, lcd_node):
 
 
 @patch('oracle_voter.common.client.http_get')
+def test_get_oracle_prevotes_validator_exception(http_mock, lcd_node):
+    http_mock.return_value = not_found()
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_oracle_prevotes_validator(
+            "mnt", "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu")
+    )
+    assert result is None
+
+
+@patch('oracle_voter.common.client.http_get')
 def test_get_oracle_votes_validator(http_mock, lcd_node):
     http_mock.return_value = async_stubber("")
     loop = asyncio.get_event_loop()
@@ -102,3 +176,15 @@ def test_get_oracle_votes_validator(http_mock, lcd_node):
     )
     http_mock.assert_called_once_with(
         "http://127.0.0.1:1317/oracle/denoms/mnt/votes/terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu", params={})
+
+
+@patch('oracle_voter.common.client.http_get')
+def test_get_oracle_votes_validator_exception(http_mock, lcd_node):
+    http_mock.return_value = async_raiser(HttpError('test', 400, ''))
+    loop = asyncio.get_event_loop()
+    result = loop.run_until_complete(
+        lcd_node.get_oracle_votes_validator(
+            "mnt", "terravaloper1lsgzqmtyl99cxjs2rdrwvda3g6g6z8d3g8tfzu")
+    )
+    assert result is None
+        

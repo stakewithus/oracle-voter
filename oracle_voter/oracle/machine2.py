@@ -79,7 +79,8 @@ class Oracle:
 
     async def retrieve_height(self):
         raw_res = await self.lcd_node.get_latest_block()
-        print("Retrieve height is OK")
+        if raw_res is None:
+            return
         block_meta = raw_res["block_meta"]
         current_height = int(block_meta["header"]["height"])
         if current_height > self.current_height:

@@ -1,5 +1,6 @@
 from decimal import Decimal
 from oracle_voter.common import client
+from oracle_voter.common.client import HttpError
 
 EIGHTEEN_PLACES = Decimal(10) ** -18
 
@@ -124,65 +125,92 @@ class LCDNode:
         self.addr = addr
 
     async def get_tx(self, tx_hash):
-        target_url = f"{self.addr}/txs/{tx_hash}"
-        params = {}
-        http_res = await client.http_get(
-            target_url,
-            params=params,
-        )
-        return http_res
+        try:
+            target_url = f"{self.addr}/txs/{tx_hash}"
+            params = {}
+            http_res = await client.http_get(
+                target_url,
+                params=params,
+            )
+            return http_res
+        except HttpError:
+            return None
 
     async def broadcast_tx_async(self, tx):
-        target_url = f"{self.addr}/txs"
-        params = {}
-        post_data = tx
-        http_res = await client.http_post(
-            target_url,
-            params=params,
-            post_data=post_data,
-        )
-        return http_res
+        try:
+            target_url = f"{self.addr}/txs"
+            params = {}
+            post_data = tx
+            http_res = await client.http_post(
+                target_url,
+                params=params,
+                post_data=post_data,
+            )
+            return http_res
+        except HttpError:
+            return None
 
     async def get_latest_block(self):
-        target_url = f"{self.addr}/blocks/latest"
-        params = dict()
-        http_res = await client.http_get(target_url, params=params)
-        return http_res
+        try:
+            target_url = f"{self.addr}/blocks/latest"
+            params = dict()
+            http_res = await client.http_get(target_url, params=params)
+            
+            return http_res
+        except HttpError:
+            return None
 
     async def get_account(self, account):
-        target_url = f"{self.addr}/auth/accounts/{account}"
-        params = dict()
-        http_res = await client.http_get(target_url, params=params)
-        return http_res
+        try:
+            target_url = f"{self.addr}/auth/accounts/{account}"
+            params = dict()
+            http_res = await client.http_get(target_url, params=params)
+            return http_res
+        except HttpError:
+            return None
 
     async def get_oracle_rates(self):
-        target_url = f"{self.addr}/oracle/denoms/exchange_rates"
-        params = dict()
-        http_res = await client.http_get(target_url, params=params)
-        return http_res
+        try:
+            target_url = f"{self.addr}/oracle/denoms/exchange_rates"
+            params = dict()
+            http_res = await client.http_get(target_url, params=params)
+            return http_res
+        except HttpError:
+            return None
 
     async def get_oracle_active_denoms(self):
-        target_url = f"{self.addr}/oracle/denoms/actives"
-        params = dict()
-        http_res = await client.http_get(target_url, params=params)
-        return http_res
+        try:
+            target_url = f"{self.addr}/oracle/denoms/actives"
+            params = dict()
+            http_res = await client.http_get(target_url, params=params)
+            return http_res
+        except HttpError:
+            return None
 
     async def get_oracle_prevotes_validator(
         self,
         denom="",
         validator_addr="",
     ):
-        target_url = f"{self.addr}/oracle/denoms/{denom}/prevotes/{validator_addr}"
-        params = dict()
-        http_res = await client.http_get(target_url, params=params)
-        return http_res
+        try:
+            target_url = f"{self.addr}/oracle/denoms/{denom}/prevotes/{validator_addr}"
+            params = dict()
+            http_res = await client.http_get(target_url, params=params)
+            return http_res
+        except HttpError:
+            return None
 
     async def get_oracle_votes_validator(
         self,
         denom="",
         validator_addr="",
     ):
-        target_url = f"{self.addr}/oracle/denoms/{denom}/votes/{validator_addr}"
-        params = dict()
-        http_res = await client.http_get(target_url, params=params)
-        return http_res
+        try:
+            target_url = f"{self.addr}/oracle/denoms/{denom}/votes/{validator_addr}"
+            params = dict()
+            http_res = await client.http_get(target_url, params=params)
+            print('http_res', http_res);
+            
+            return http_res
+        except HttpError:
+            return None
