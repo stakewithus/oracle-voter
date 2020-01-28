@@ -71,9 +71,10 @@ class Oracle:
 
     """
     We should have predictable error returns or default value returns
-    if anoy of the below external call throws
+    if any of the below external call throws
     """
     async def retrieve_tx(self, tx_hash):
+        # In new version, raw_res is None for Http Error 
         raw_res = await self.lcd_node.get_tx(tx_hash)
         return raw_res
 
@@ -369,7 +370,9 @@ Denom: {msg_val["denom"]} """)
 
     async def query_tx(self, height, tx_info):
         tx_type, tx_hash = tx_info
-        try:
+        # In new version, raw_res is None for Http Error 
+        raw_res = await self.retrieve_tx(tx_hash)
+        if raw_res is not None:
             raw_res = await self.retrieve_tx(tx_hash)
             raw_height = raw_res["height"]
             raw_logs = raw_res["logs"]
@@ -393,7 +396,7 @@ Denom: {msg_val["denom"]} """)
                 self.hist_prevotes[tx_hash]["height"] = raw_height
                 if success is not True:
                     self.hist_prevotes[tx_hash]["failed_logs"] = failed_logs
-        except HttpError:
+        else:
             new_check_height = height + 1
             if tx_type == "vote":
                 self.q_vote_tx_hash.appendleft((new_check_height, tx_hash))

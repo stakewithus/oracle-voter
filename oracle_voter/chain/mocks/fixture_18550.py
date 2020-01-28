@@ -91,7 +91,7 @@ def broadcast_tx(txhash):
 
 
 def query_tx():
-    return async_raiser(HttpError('Connection error', '400', ''))
+    return async_stubber(None)
 
 
 def mock_height_18550(
@@ -112,5 +112,7 @@ def mock_height_18550(
     ]
     txhash = '097817AABE904AAE1BD628487E1011FC4EF53ECD74A2D767893E5623943D1265'
     LCDNodeMock.broadcast_tx_async.return_value = broadcast_tx(txhash)
+    # get_tx in latest API does not throw HttpError anymore
+    # instead return None
     LCDNodeMock.get_tx.return_value = query_tx()
     return LCDNodeMock
