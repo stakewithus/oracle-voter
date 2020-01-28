@@ -1,4 +1,4 @@
-# oracle-voter 0.1.4-alpha
+# oracle-voter 0.1.5-alpha
 
 ## Usage
 
@@ -42,7 +42,8 @@ oracle_voter terravaloper1rhrptnx87ufpv62c7ngt9yqlz2hr77xr9nkcr9 \
   --gas-denom uluna \
   --home /home/exampler_user/.terracli
 ```
-
+## Changelog 0.1.5
+- Fixed bug in query_tx due to outdated internal API
 ## Changelog 0.1.4
 - Improved overall test coverage for critical components: feeds, oracle machine, wallet
 
