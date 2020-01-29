@@ -13,7 +13,12 @@ import simplejson as json
 from collections import deque, OrderedDict
 
 from oracle_voter.oracle.utils import get_vote_period
-from oracle_voter.feeds.markets import supported_rates, WEI_VALUE, ABSTAIN_VOTE_PX, ExchangeErr
+from oracle_voter.feeds.markets import (
+    supported_rates,
+    WEI_VALUE,
+    ABSTAIN_VOTE_PX,
+    ExchangeErr
+)
 from oracle_voter.chain.core import Transaction
 from oracle_voter.common.client import HttpError
 
@@ -74,7 +79,7 @@ class Oracle:
     if any of the below external call throws
     """
     async def retrieve_tx(self, tx_hash):
-        # In new version, raw_res is None for Http Error 
+        # In new version, raw_res is None for Http Error
         raw_res = await self.lcd_node.get_tx(tx_hash)
         return raw_res
 
@@ -164,34 +169,37 @@ class Oracle:
         print("---- PreVotes Seen ----")
         print(json.dumps(prevotes, indent=2))
         print("---- End PreVotes Seen ----")
-        if len(prevotes) > 0:
-            prevote_data = prevotes[0]
-            # Attempt to get the prevote hash from current hashmap
-            prevote_cached = self.prior_prevotes.get(
-                prevote_data["hash"],
-                None,
-            )
-            # If prevote_cached is None
-            # We do not have information on this pre-vote
-            # Hence we cannot vote
-            if prevote_cached is not None:
-                prevote_vp = prevote_cached["vp"]
-                print(f"PreVote VP: {prevote_vp} Current VP: {self.current_vote_period}")
-                # Get Previous Hashed
-                hash_info = self.hash_map.get(denom, None)
-                # Do not reveal vote if prior prevote voting period
-                # Is the same as the current voting period
-                if hash_info is not None and \
-                        self.current_vote_period > prevote_vp:
-                    rate_salt, hashed = self.hash_map.get(denom)
+        if len(prevotes) == 0:
+            return
+        #
+        prevote_data = prevotes[0]
+        # Attempt to get the prevote hash from current hashmap
+        prevote_cached = self.prior_prevotes.get(
+            prevote_data["hash"],
+            None,
+        )
+        # If prevote_cached is None
+        # We do not have information on this pre-vote
+        # Hence we cannot vote
+        if prevote_cached is None:
+            return
+        prevote_vp = prevote_cached["vp"]
+        print(f"PreVote VP: {prevote_vp} Current VP: {self.current_vote_period}")
+        # Get Previous Hashed
+        hash_info = self.hash_map.get(denom, None)
+        # Do not reveal vote if prior prevote voting period
+        # Is the same as the current voting period
+        if hash_info is not None and \
+                self.current_vote_period > prevote_vp:
+            rate_salt, hashed = self.hash_map.get(denom)
 
-                    self.vote_msg_builder.append_votemsg(
-                        exchange_rate=prevote_cached["px"],
-                        denom=denom,
-                        feeder=self.wallet.account_addr,
-                        validator=self.validator_addr,
-                        salt=prevote_cached["salt"],
-                    )
+            self.vote_msg_builder.append_votemsg(
+                exchange_rate=prevote_cached["px"],
+                denom=denom,
+                feeder=self.wallet.account_addr,
+                validator=self.validator_addr,
+                salt=prevote_cached["salt"],
+            )
 
     def get_rate_salt(self):
         return token_hex(2)
@@ -370,7 +378,7 @@ Denom: {msg_val["denom"]} """)
 
     async def query_tx(self, height, tx_info):
         tx_type, tx_hash = tx_info
-        # In new version, raw_res is None for Http Error 
+        # In new version, raw_res is None for Http Error
         raw_res = await self.retrieve_tx(tx_hash)
         if raw_res is not None:
             raw_res = await self.retrieve_tx(tx_hash)
@@ -418,7 +426,8 @@ Denom: {msg_val["denom"]} """)
         if len(self.q_prevote_tx_hash) > 0:
             leftover_hash = deque()
             while(len(self.q_prevote_tx_hash) > 0):
-                check_height, prevote_tx_hash = self.q_prevote_tx_hash.popleft()
+                check_height,
+                prevote_tx_hash = self.q_prevote_tx_hash.popleft()
                 if height >= check_height:
                     tx_hashes.append(('prevote', prevote_tx_hash))
                 else:

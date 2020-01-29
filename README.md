@@ -1,4 +1,4 @@
-# oracle-voter 0.1.5-alpha
+# oracle-voter 0.2.0 (IN PROGRESS)
 
 ## Usage
 
