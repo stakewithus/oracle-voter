@@ -1,63 +1,47 @@
-from decimal import Decimal
-from oracle_voter.feeds.base import Base
-from oracle_voter.common import client
-from oracle_voter.common.client import HttpError
+from oracle_voter.base.api import API
+from oracle_voter.base.errors import ExchangeError, HttpError
+from oracle_voter.base.money import Note
 
-class Coinone(Base):
 
-    def __init__(self, api_url):
-        super().__init__(api_url)
+class Coinone:
 
-    def format_trade(self, complete_order):
-        px = Decimal(complete_order["price"])
-        qty = Decimal(complete_order["qty"])
-        side = 1  # Long
-        if complete_order["is_ask"] == "1":
-            side = 0  # Short
-        ts = complete_order["timestamp"]
-        return (ts, px, qty, side)
+    base_url = "https://api.coinone.co.kr"
 
-    def postpro_trades(self, http_res):
-        result = dict()
-        error_code = http_res["errorCode"]
-        if error_code != "0":
-            return error_code, result
-        fetch_ts = http_res["timestamp"]
-        # Convert raw trade history into common format
-        complete_orders = http_res["completeOrders"]
-        trades = [self.format_trade(order) for order in complete_orders]
-        return None, {"fetch_ts": fetch_ts, "trades": trades}
+    supported_pairs = [
+        "LUNA",
+    ]
 
-    async def get_trades(self, currency):
-        get_params = {"currency": currency, "format": "json"}
-        target_url = f"{self.api_url}/trades/"
-        http_res = await client.http_get(target_url, params=get_params)
-        return self.postpro_trades(http_res)
+    def __init__(self, config={}):
+        self._api = API(dict(base_url=self.base_url))
 
-    def format_order(self, open_order):
-        px = Decimal(open_order["price"])
-        qty = Decimal(open_order["qty"])
+    def format_order(self, odr):
+        px = Note(odr["price"])
+        qty = Note(odr["qty"])
         return px, qty
 
-    def postpro_orders(self, http_res):
-        result = dict()
-        error_code = http_res["errorCode"]
-        if error_code != "0":
-            return error_code, result
-        fetch_ts = http_res["timestamp"]
-        asks = [
-            self.format_order(open_order) for open_order in http_res["ask"]
-        ]
-        bids = [
-            self.format_order(open_order) for open_order in http_res["bid"]
-        ]
-        return None, {"fetch_ts": fetch_ts, "asks": asks, "bids": bids}
+    def handle_orderbook(self, api_resp):
+        exchange_error_code = api_resp.get("errorCode", "-1")
+
+        if exchange_error_code != "0":
+            # TODO Log Error
+            return None
+
+        ts = api_resp.get("timestamp")
+        asks = [self.format_order(odr) for odr in api_resp.get("ask", [])]
+        bids = [self.format_order(odr) for odr in api_resp.get("bid", [])]
+
+        return ts, asks, bids
 
     async def get_orderbook(self, currency):
-        get_params = {"currency": currency, "format": "json"}
-        target_url = f"{self.api_url}/orderbook/"
+        if currency not in self.supported_pairs:
+            raise ExchangeError(f"Unsupported currency: {currency}")
         try:
-            http_res = await client.http_get(target_url, params=get_params)
-            return self.postpro_orders(http_res)
-        except HttpError as err:
-            return err, None
+            api_resp = await self._api.fetch(
+                "orderbook/",
+                query=dict(currency=currency, format="json"),
+            )
+            if api_resp is None:
+                return api_resp
+            return self.handle_orderbook(api_resp)
+        except HttpError:
+            return None

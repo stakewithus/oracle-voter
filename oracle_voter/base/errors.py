@@ -1,0 +1,2 @@
+ExchangeError = Exception
+HttpError = Exception
